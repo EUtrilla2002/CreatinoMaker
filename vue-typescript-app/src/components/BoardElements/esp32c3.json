@@ -1,0 +1,9 @@
+{
+  "name": "risv-esp32c3",
+  "author": "Elisa Utrilla Arroyo - UC3M",
+  "pins": [
+    "GND0",
+    "GPIO5"
+  ],
+  "connections": []
+}
