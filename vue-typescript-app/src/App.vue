@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
-import BoardElement from './components/BoardElement.vue';
+import { ref, reactive, watch, nextTick, onMounted } from 'vue'
+import BoardElement from './components/BoardElements/BoardElement.vue';
 import * as Emulator from "@aloeminium108/risc-v-emulator";
 const { Assembler, CPU } = Emulator.default;
 import hookMap from './components/BoardElements/emulator.js';
 import boardData from './components/BoardElements/esp32c3.json';
+import ConnectionsLines from './components/Gadgets/Lines.vue';
 
 const positions = reactive({
   svgIcon: { x: 300, y: 100 }
@@ -26,6 +27,8 @@ const asmCode = ref([
     ]);
 const draggingId = ref<string | null>(null)
 const offset = reactive({ x: 0, y: 0 })
+const svgRef = ref<SVGSVGElement | null>(null)
+const selectedPin = ref<string | null>(null)
 
 function handleMouseDown(e: MouseEvent, id: string) {
   draggingId.value = id
@@ -72,6 +75,64 @@ const runProgram = async () => {
         }
       }
     };
+
+function setupPinListeners() {
+  if (!svgRef.value) return;
+
+  // Accedemos al SVG completo
+  const svg = svgRef.value.svgEl;
+  if (!svg) return;
+
+  // Buscamos el grupo con id="GPIO5"
+  const group = svg.querySelector<SVGElement>('#g147');
+  console.log(group);
+  if (!group) return;
+
+  // Seleccionamos todos los hijos con id dentro del grupo GPIO5
+  const pins = group.querySelectorAll<SVGElement>('[id]');
+  
+  pins.forEach(el => {
+    const pinId = el.id;
+    if ((boardData.pins as string[]).includes(pinId)) {
+      // Cambiamos cursor para indicar que es clickeable
+      (el as HTMLElement).style.cursor = "pointer";
+
+      // Añadimos el click handler
+      (el as HTMLElement).onclick = (e: Event) => {
+        e.stopPropagation();
+
+        if (selectedPin.value === pinId) {
+          // Deseleccionar
+          el.setAttribute("fill", "#ffd700");
+          selectedPin.value = null;
+          console.log("Out");
+        } else {
+          // Si había otro seleccionado, lo resetamos
+          if (selectedPin.value) {
+            const prev = svg.querySelector(`#${selectedPin.value}`);
+            if (prev) prev.setAttribute("fill", "#ffd700");
+          }
+          // Seleccionamos el nuevo
+          el.setAttribute("fill", "red");
+          selectedPin.value = pinId;
+          console.log("Selected");
+        }
+      };
+    }
+  });
+}
+
+onMounted(() => {
+  nextTick(() => {
+    setupPinListeners();
+  });
+});
+
+watch(() => boardData.pins, () => {
+  nextTick(() => {
+    setupPinListeners();
+  });
+});
 </script>
 
 <template>
@@ -86,12 +147,12 @@ const runProgram = async () => {
     @handleMouseDown="handleMouseDown"
     ref="svgRef"
       />
-      <!-- <ConnectionsLines
+      <ConnectionsLines
         :connections="connections"
         :svgRef="svgRef"
         :positions="positions"
         :workspaceRef="workspaceRef"
-      /> -->
+      />
     </div>
     <button @click="runProgram">Run</button>
     <button @click="clearConnections">Clear</button>

@@ -1,5 +1,57 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<script setup lang="ts">
+import { ref, onMounted, defineProps, defineEmits, defineExpose } from 'vue'
+
+// Props
+const props = defineProps<{
+  positions: { svgIcon: { x: number; y: number } }
+}>()
+
+// Emit
+const emit = defineEmits<{
+  (e: 'handleMouseDown', event: MouseEvent, id: string): void
+}>()
+
+// Refs
+const svgEl = ref<SVGSVGElement | null>(null)
+// Array con referencias a todos los elementos cuyo id empieza con GND o GPIO
+const elementsGndGpio = ref<(SVGElement)[]>([])
+
+// Cuando el componente esté montado, buscamos los elementos que queremos
+onMounted(() => {
+  if (svgEl.value) {
+    const selector = '[id^="GND"], [id^="GPIO"]'
+    const foundElements = svgEl.value.querySelectorAll<SVGElement>(selector)
+    elementsGndGpio.value = Array.from(foundElements)
+  }
+})
+
+// Exponer referencias para que el padre pueda acceder
+defineExpose({
+  svgEl,
+  elementsGndGpio,
+})
+
+// Función para manejar el evento mousedown
+function onMouseDown(e: MouseEvent) {
+  emit('handleMouseDown', e, 'svgIcon')
+}
+</script>
+
+<template>
+  <div
+    :style="{
+      position: 'absolute',
+      left: positions.svgIcon.x + 'px',
+      top: positions.svgIcon.y + 'px',
+      cursor: 'grab'
+    }"
+    @mousedown="onMouseDown"
+    ref="svgRef"
+  >
+    <!-- SVG como componente -->
+    <!-- <Board ref="boardComponent" class="w-32 h-32 border border-red-500" /> -->
 <svg
+   ref="svgEl" 
    width="25.4mm"
    height="42.9mm"
    version="1.1"
@@ -922,3 +974,8 @@
      x="33.803333"
      y="18.84865"
      inkscape:label="logo" /></svg>
+
+  </div>
+</template>
+
+
