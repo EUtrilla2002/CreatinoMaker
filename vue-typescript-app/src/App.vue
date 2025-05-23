@@ -6,10 +6,14 @@ const { Assembler, CPU } = Emulator.default;
 import hookMap from './components/BoardElements/emulator.js';
 import boardData from './components/BoardElements/esp32c3.json';
 import ConnectionsLines from './components/Gadgets/Lines.vue';
+import Menu from './components/Gadgets/GadgetMenu.vue';
+import LEDComponent from './components/Gadgets/Elements/LED.vue';
 
-const positions = reactive({
-  svgIcon: { x: 300, y: 100 }
-})
+const positions = reactive<Record<string, { x: number, y: number }>>({
+  svgIcon: { x: 300, y: 100 },
+  led: { x: 200, y: 100 } // Agrega esta línea
+});
+const ledState = ref(true);
 const connections = ref(boardData.connections);
 const asmCode = ref([
       "addi a0, a0, 5",
@@ -30,16 +34,19 @@ const offset = reactive({ x: 0, y: 0 })
 const svgRef = ref<SVGSVGElement | null>(null)
 const selectedPin = ref<string | null>(null)
 
+const SCALE = 2; // Usa el mismo valor que en el CSS
+
 function handleMouseDown(e: MouseEvent, id: string) {
   draggingId.value = id
-  offset.x = e.clientX - positions[id].x
-  offset.y = e.clientY - positions[id].y
+  offset.x = (e.clientX - positions[id].x * SCALE)
+  offset.y = (e.clientY - positions[id].y * SCALE)
 }
 
 function handleMouseMove(e: MouseEvent) {
+  console.log("Dragging ID:", draggingId.value)
   if (!draggingId.value) return
-  positions[draggingId.value].x = e.clientX - offset.x
-  positions[draggingId.value].y = e.clientY - offset.y
+  positions[draggingId.value].x = (e.clientX - offset.x) / SCALE
+  positions[draggingId.value].y = (e.clientY - offset.y) / SCALE
 }
 
 function handleMouseUp() {
@@ -133,20 +140,39 @@ watch(() => boardData.pins, () => {
     setupPinListeners();
   });
 });
+const showMenu = ref(false);
+function setupMenu() {
+  showMenu.value = !showMenu.value; // 2. Alternar visibilidad
+}
 </script>
 
 <template>
   
   <div class="App" @mousemove="handleMouseMove" @mouseup="handleMouseUp" style="width: 100vw; height: 100vh; position: relative; overflow: hidden;">
-    <h1>Creatino Maker</h1>
-    <!-- <GadgetMenu /> -->
-    <div ref="workspaceRef" style="width: 100%; height: 50%; border: 2px solid #ccc; position: relative; margin-bottom: 1rem; overflow: hidden;">
-      <!-- <Board class="w-8 h-8" /> -->
-      <BoardElement
-    :positions="positions"
-    @handleMouseDown="handleMouseDown"
-    ref="svgRef"
-      />
+    <h1 style="text-align: center; margin-top: 1rem;">Creatino Maker</h1>
+    <Menu v-if="showMenu" style="position: absolute; bottom:270px; right: 510px; z-index: 1200;" />
+
+    <div ref="workspaceRef" style="width: 90%; height: 70%; border: 2px solid #ccc; position: relative; margin-bottom: 1rem; overflow: hidden;">
+      <div style="position: absolute; bottom: 20px; right: 20px; z-index: 1100;">
+        <div style="position: relative; display: inline-block;">
+          <button @click="setupMenu" id="plus-btn" style="font-size: 2rem; padding: 0.75rem 1.5rem; margin-right: 0.5rem;">+</button>
+          <button @click="runProgram" style="font-size: 1.5rem; padding: 0.75rem 1.5rem; margin-right: 0.5rem;">Run</button>
+          <button @click="clearConnections" style="font-size: 1.5rem; padding: 0.75rem 1.5rem;">Clear</button>
+        </div>
+      </div>
+      <div style="transform: scale(2); transform-origin: top left; display: inline-block;">
+        <BoardElement
+          :positions="positions"
+          @handleMouseDown="handleMouseDown"
+          ref="svgRef"
+        />
+        <LEDComponent
+          ref="led"
+          :position="positions.led"
+          :ledState="ledState"
+          @handleMouseDown="handleMouseDown"
+        />
+      </div>
       <ConnectionsLines
         :connections="connections"
         :svgRef="svgRef"
@@ -154,8 +180,7 @@ watch(() => boardData.pins, () => {
         :workspaceRef="workspaceRef"
       />
     </div>
-    <button @click="runProgram">Run</button>
-    <button @click="clearConnections">Clear</button>
+
     <!-- <textarea v-model="asmCode" readonly style="width: 100%;" rows="10"></textarea> -->
   </div>
 </template>

@@ -48,8 +48,6 @@ function onMouseDown(e: MouseEvent) {
     @mousedown="onMouseDown"
     ref="svgRef"
   >
-    <!-- SVG como componente -->
-    <!-- <Board ref="boardComponent" class="w-32 h-32 border border-red-500" /> -->
 <svg
    ref="svgEl" 
    width="25.4mm"

@@ -10,7 +10,7 @@
     "GPIO2", "GPIO3", "GNDE",
     "GPIO10", "GNDF", "GPIO20",
     "GPIO21", "GNDG", "GPIO18",
-    "GPIO19", "GNDH", "GNDI"
+    "GPIO19", "GNDH", "GNDI","RST1"
   ],
   "connections": []
 }
