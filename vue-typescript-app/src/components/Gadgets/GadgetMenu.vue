@@ -20,7 +20,7 @@
           :key="item.label"
           class="flex items-center px-4 py-2 hover:bg-gray-800 cursor-pointer w-full text-left bg-transparent border-0 focus:outline-none"
           type="button"
-          @click="addComponent(item.label)"
+          @click="handleAddGadget(item.label)"
         >
           <img :src="item.icon" alt="" class="w-5 h-5 mr-3" />
           <span>{{ item.label }}</span>
@@ -30,12 +30,13 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed } from 'vue'
 
-const emit = defineEmits(['add-gadget'])
+const emit = defineEmits(['add-gadget']);
 
-function addComponent(label) {
+
+function handleAddGadget(label) {
   console.log(`Adding component: ${label}`)
   switch(label) {
     case 'LED':

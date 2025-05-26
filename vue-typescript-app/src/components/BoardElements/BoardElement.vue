@@ -3,8 +3,18 @@ import { ref, onMounted, defineProps, defineEmits, defineExpose } from 'vue'
 
 // Props
 const props = defineProps<{
-  positions: { svgIcon: { x: number; y: number } }
+  positions: { 
+    id: string;
+    position: { x: number; y: number };
+    compState: boolean;
+  }[]
 }>()
+
+// Get board position from the positions array
+const getBoardPosition = () => {
+  const boardItem = props.positions.find(item => item.id === 'board')
+  return boardItem?.position || { x: 0, y: 0 }
+}
 
 // Emit
 const emit = defineEmits<{
@@ -13,8 +23,9 @@ const emit = defineEmits<{
 
 // Refs
 const svgEl = ref<SVGSVGElement | null>(null)
-// Array con referencias a todos los elementos cuyo id empieza con GND o GPIO
+const svgRef = ref<HTMLDivElement | null>(null)
 const elementsGndGpio = ref<(SVGElement)[]>([])
+
 
 // Cuando el componente esté montado, buscamos los elementos que queremos
 onMounted(() => {
@@ -29,11 +40,12 @@ onMounted(() => {
 defineExpose({
   svgEl,
   elementsGndGpio,
+  svgRef
 })
 
 // Función para manejar el evento mousedown
 function onMouseDown(e: MouseEvent) {
-  emit('handleMouseDown', e, 'svgIcon')
+  emit('handleMouseDown', e, 'board')
 }
 </script>
 
@@ -41,8 +53,8 @@ function onMouseDown(e: MouseEvent) {
   <div
     :style="{
       position: 'absolute',
-      left: positions.svgIcon.x + 'px',
-      top: positions.svgIcon.y + 'px',
+      left: getBoardPosition().x + 'px',
+      top: getBoardPosition().y + 'px',
       cursor: 'grab'
     }"
     @mousedown="onMouseDown"

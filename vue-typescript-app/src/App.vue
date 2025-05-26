@@ -9,11 +9,25 @@ import ConnectionsLines from './components/Gadgets/Lines.vue';
 import Menu from './components/Gadgets/GadgetMenu.vue';
 import LEDComponent from './components/Gadgets/Elements/LED.vue';
 
-const positions = reactive<Record<string, { x: number, y: number }>>({
-  svgIcon: { x: 300, y: 100 },
-  led: { x: 200, y: 100 } // Agrega esta línea
-});
-const ledState = ref(true);
+// const positions = reactive<Record<string, { x: number, y: number }>>({
+//   board: { x: 300, y: 100 },
+//   led: { x: 200, y: 100 } 
+// });
+const compState = ref(true);
+const positions = ref<{ id: string, position: { x: number, y: number }, compState: boolean }[]>([
+  {
+    id: 'board',
+    position: { x: 300, y: 100 },
+    compState: true
+  },
+  {
+    id: 'led',
+    position: { x: 200, y: 100 },
+    compState: true
+  }
+]);
+const leds = ref<{ id: string, position: { x: number, y: number }, compState: boolean }[]>([]);
+
 const connections = ref(boardData.connections);
 const asmCode = ref([
       "addi a0, a0, 5",
@@ -38,16 +52,51 @@ const SCALE = 2; // Usa el mismo valor que en el CSS
 
 function handleMouseDown(e: MouseEvent, id: string) {
   draggingId.value = id
-  offset.x = (e.clientX - positions[id].x * SCALE)
-  offset.y = (e.clientY - positions[id].y * SCALE)
+  const element = positions.value.find(item => item.id === id);
+  
+  if (!element) return;
+
+  if (draggingId.value?.startsWith("led-")) {
+    offset.x = (e.clientX - element.position.x * SCALE)
+    offset.y = (e.clientY - element.position.y * SCALE)
+  } else {
+    console.log("Elemento normal arrastrado:", draggingId.value);
+  }
+  
+  offset.x = (e.clientX - element.position.x * SCALE)
+  offset.y = (e.clientY - element.position.y * SCALE)
 }
 
 function handleMouseMove(e: MouseEvent) {
-  console.log("Dragging ID:", draggingId.value)
   if (!draggingId.value) return
-  positions[draggingId.value].x = (e.clientX - offset.x) / SCALE
-  positions[draggingId.value].y = (e.clientY - offset.y) / SCALE
+  console.log("Dragging ID:", draggingId.value);
+  console.log("Status:", {
+  length: positions.value.length,
+  elements: JSON.stringify(positions.value, null, 2),
+  raw: positions.value
+});
+  
+  positions.value.forEach((item) => {
+    if (item.id === draggingId.value) {
+      item.position.x = (e.clientX - offset.x) / SCALE
+      item.position.y = (e.clientY - offset.y) / SCALE
+    }
+  });
 }
+function handleAddGadget(type: string) {
+  if (type === 'LED') {
+    const id = `led-${Date.now()}-${Math.random()}`;
+    console.log("Adding LED with ID:", id);
+    positions.value.push({
+      id,
+      position: { x: 200 + positions.value.length * 40, y: 100 }, // Espaciado simple
+      compState: true
+    });
+    console.log(positions.value.length);
+
+  }
+}
+
 
 function handleMouseUp() {
   draggingId.value = null
@@ -67,11 +116,11 @@ const runProgram = async () => {
         const pcvalue = cpu.pc - prev_value;
         switch (pcvalue) {
           case 0x100:
-            hookMap[0x100](cpu, connections.value, (val) => (ledState.value = val));
+            hookMap[0x100](cpu, connections.value, (val) => (compState.value = val));
             prev_value = cpu.pc;
             break;
           case 0x104:
-            await hookMap[0x104](cpu, (val) => (ledState.value = val));
+            await hookMap[0x104](cpu, (val) => (compState.value = val));
             prev_value = cpu.pc;
             break;
           default:
@@ -150,7 +199,7 @@ function setupMenu() {
   
   <div class="App" @mousemove="handleMouseMove" @mouseup="handleMouseUp" style="width: 100vw; height: 100vh; position: relative; overflow: hidden;">
     <h1 style="text-align: center; margin-top: 1rem;">Creatino Maker</h1>
-    <Menu v-if="showMenu" style="position: absolute; bottom:270px; right: 510px; z-index: 1200;" />
+    <Menu v-if="showMenu" style="position: absolute; bottom:270px; right: 510px; z-index: 1200;" @add-gadget="handleAddGadget" />
 
     <div ref="workspaceRef" style="width: 90%; height: 70%; border: 2px solid #ccc; position: relative; margin-bottom: 1rem; overflow: hidden;">
       <div style="position: absolute; bottom: 20px; right: 20px; z-index: 1100;">
@@ -158,6 +207,8 @@ function setupMenu() {
           <button @click="setupMenu" id="plus-btn" style="font-size: 2rem; padding: 0.75rem 1.5rem; margin-right: 0.5rem;">+</button>
           <button @click="runProgram" style="font-size: 1.5rem; padding: 0.75rem 1.5rem; margin-right: 0.5rem;">Run</button>
           <button @click="clearConnections" style="font-size: 1.5rem; padding: 0.75rem 1.5rem;">Clear</button>
+          <button @click="handleAddGadget('LED')" style="position: absolute; top: -80px; left: 10px;">Añadir LED</button>
+
         </div>
       </div>
       <div style="transform: scale(2); transform-origin: top left; display: inline-block;">
@@ -167,10 +218,11 @@ function setupMenu() {
           ref="svgRef"
         />
         <LEDComponent
-          ref="led"
-          :position="positions.led"
-          :ledState="ledState"
-          @handleMouseDown="handleMouseDown"
+          v-for="led in positions.filter(item => item.id.startsWith('led-'))"
+          :key="led.id"
+          :position="led.position"
+          :ledState="led.compState"
+          @handleMouseDown="(e) => handleMouseDown(e, led.id)"
         />
       </div>
       <ConnectionsLines
