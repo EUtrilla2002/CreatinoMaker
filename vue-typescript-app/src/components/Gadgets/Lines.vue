@@ -1,22 +1,30 @@
 <template>
   <svg ref="svgRef" class="connections-lines">
     <line
-      v-for="(line, index) in lines"
-      :key="index"
-      :x1="line.x1"
-      :y1="line.y1"
-      :x2="line.x2"
-      :y2="line.y2"
-      stroke="green"
-      stroke-width="3"
+      v-if="tempLine"
+      :x1="tempLine.x1"
+      :y1="tempLine.y1"
+      :x2="tempLine.x2"
+      :y2="tempLine.y2"
+      stroke="red"
+      stroke-width="2"
+      stroke-dasharray="5,5"
     />
   </svg>
+  <p v-if="tempLine" style="position: absolute; color: red;">
+  Línea temporal: ({{ tempLine.x1 }}, {{ tempLine.y1 }}) → ({{ tempLine.x2 }}, {{ tempLine.y2 }})
+</p>
+
 </template>
 
 <script>
 export default {
   name: 'ConnectionsLines',
   props: {
+  tempLine: {
+    type: Object,
+    required: false
+  },
     connections: {
       type: Array,
       required: true
@@ -48,28 +56,45 @@ export default {
   },
   methods: {
     drawConnections() {
-      if (!this.svgRef || !this.svgRef.$el) return;
-      const svgElement = this.svgRef.$el || this.svgRef;
-      const ledOffsetX = this.positions.led.x;
-      const ledOffsetY = this.positions.led.y;
-      const ledPinPos = {
-        left: { x: 45, y: 40 },
-        right: { x: 60, y: 40 }
-      };
+      console.log('Drawing connections:', this.connections);
 
-      this.lines = this.connections.map(({ pinName, ledPin }) => {
-        const pinEl = svgElement.querySelector(`#${pinName}`);
-        if (!pinEl) return null;
-        const pinRect = pinEl.getBoundingClientRect();
-        const svgRect = svgElement.getBoundingClientRect();
+      this.lines = this.connections.map((conn, i) => {
+        console.log(`Connection ${i}:`, conn);
 
-        const x1 = pinRect.left - svgRect.left + pinRect.width / 2;
-        const y1 = pinRect.top - svgRect.top + pinRect.height / 2;
-        const x2 = ledOffsetX + ledPinPos[ledPin].x;
-        const y2 = ledOffsetY + ledPinPos[ledPin].y;
+        // Verifica que los datos de la conexión sean válidos
+        if (!conn.selectedPin || !conn.ledPin) {
+          console.warn(`Invalid connection data at index ${i}:`, conn);
+          return null;
+        }
+        console.log(conn.selectedPin);
+
+
+        
+
+
+        // const pinEl = svgElement.querySelector(`#${conn.pinName}`);
+        // if (!pinEl) {
+        //   console.warn(`Pin element not found for pinName: ${conn.pinName}`);
+        //   return null;
+        // }
+
+
+        const ledOffsetX = conn.ledPin.position.x;
+        const ledOffsetY = conn.ledPin.position.y;
+        const ledPinPos = {
+          left: { x: 45, y: 40 },
+          right: { x: 60, y: 40 }
+        };
+
+        const x1 = conn.selectedPin.position.x;
+        const y1 = conn.selectedPin.position.y;
+        const x2 = ledOffsetX + ledPinPos[conn.ledPin.side].x;
+        const y2 = ledOffsetY + ledPinPos[conn.ledPin.side].y;
 
         return { x1, y1, x2, y2 };
       }).filter(Boolean);
+
+      console.log('Lines drawn:', this.lines);
     }
   }
 }

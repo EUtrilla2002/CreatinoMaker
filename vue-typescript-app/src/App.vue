@@ -13,22 +13,25 @@ import LEDComponent from './components/Gadgets/Elements/LED.vue';
 //   board: { x: 300, y: 100 },
 //   led: { x: 200, y: 100 } 
 // });
+const tempLine = ref<{ x1: number, y1: number, x2: number, y2: number } | null>(null);
+const workspaceRef = ref<HTMLDivElement | null>(null);
+
+
 const compState = ref(true);
 const positions = ref<{ id: string, position: { x: number, y: number }, compState: boolean }[]>([
   {
     id: 'board',
     position: { x: 300, y: 100 },
     compState: true
-  },
-  {
-    id: 'led',
-    position: { x: 200, y: 100 },
-    compState: true
   }
 ]);
-const leds = ref<{ id: string, position: { x: number, y: number }, compState: boolean }[]>([]);
 
-const connections = ref(boardData.connections);
+//const connections = ref(boardData.connections || []);
+const connections = ref<{ 
+  pinName: string; 
+  selectedPin: { id: string; position: { x: number; y: number } }; 
+  ledPin: { side: string; position: { x: number; y: number } } 
+}[]>([]);
 const asmCode = ref([
       "addi a0, a0, 5",
       "addi a1, a1, 1",
@@ -67,22 +70,58 @@ function handleMouseDown(e: MouseEvent, id: string) {
   offset.y = (e.clientY - element.position.y * SCALE)
 }
 
-function handleMouseMove(e: MouseEvent) {
-  if (!draggingId.value) return
-  console.log("Dragging ID:", draggingId.value);
-  console.log("Status:", {
-  length: positions.value.length,
-  elements: JSON.stringify(positions.value, null, 2),
-  raw: positions.value
-});
+// function handleMouseMove(e: MouseEvent) {
+//   if (!draggingId.value) return
+//   console.log("Dragging ID:", draggingId.value);
+//   console.log("Status:", {
+//   length: positions.value.length,
+//   elements: JSON.stringify(positions.value, null, 2),
+//   raw: positions.value
+// });
   
-  positions.value.forEach((item) => {
-    if (item.id === draggingId.value) {
-      item.position.x = (e.clientX - offset.x) / SCALE
-      item.position.y = (e.clientY - offset.y) / SCALE
-    }
-  });
+//   positions.value.forEach((item) => {
+//     if (item.id === draggingId.value) {
+//       item.position.x = (e.clientX - offset.x) / SCALE
+//       item.position.y = (e.clientY - offset.y) / SCALE
+//     }
+//   });
+// }
+function handleMouseMove(e: MouseEvent) {
+  if (!draggingId.value && selectedPin.value) {
+    const workspaceRect = workspaceRef.value?.getBoundingClientRect();
+    if (!workspaceRect) return;
+
+    // console.log("SVG Rect:", svgRect);
+
+    const safeId = CSS.escape(selectedPin.value);
+    const pinEl = svgRef.value?.svgEl.querySelector(`#${safeId}`);
+    if (!pinEl) return;
+    console.log("Pin Element:", pinEl);
+
+    const pinRect = pinEl.getBoundingClientRect();
+
+    const x1 = (pinRect.left + pinRect.width / 2) - workspaceRect.left;
+    const y1 = (pinRect.top + pinRect.height / 2) - workspaceRect.top;
+
+    const x2 = e.clientX - workspaceRect.left;
+    const y2 = e.clientY - workspaceRect.top;
+
+
+
+
+    tempLine.value = { x1, y1, x2, y2 };
+  }
+
+  // Movimiento normal de componentes
+  if (!draggingId.value) return;
+
+  const element = positions.value.find(item => item.id === draggingId.value);
+  if (element) {
+    element.position.x = (e.clientX - offset.x) / SCALE;
+    element.position.y = (e.clientY - offset.y) / SCALE;
+  }
 }
+
 function handleAddGadget(type: string) {
   if (type === 'LED') {
     const id = `led-${Date.now()}-${Math.random()}`;
@@ -99,7 +138,8 @@ function handleAddGadget(type: string) {
 
 
 function handleMouseUp() {
-  draggingId.value = null
+  draggingId.value = null;
+  tempLine.value = null;
 }
 
 const runProgram = async () => {
@@ -139,7 +179,7 @@ function setupPinListeners() {
   const svg = svgRef.value.svgEl;
   if (!svg) return;
 
-  // Buscamos el grupo con id="GPIO5"
+  // Buscamos el grupo donde están todos los pines
   const group = svg.querySelector<SVGElement>('#g147');
   console.log(group);
   if (!group) return;
@@ -177,6 +217,9 @@ function setupPinListeners() {
     }
   });
 }
+watch(() => selectedPin.value, (newVal) => {
+  console.log('selectedPin changed to:', newVal);
+}, { immediate: true });
 
 onMounted(() => {
   nextTick(() => {
@@ -191,7 +234,78 @@ watch(() => boardData.pins, () => {
 });
 const showMenu = ref(false);
 function setupMenu() {
-  showMenu.value = !showMenu.value; // 2. Alternar visibilidad
+  showMenu.value = !showMenu.value; 
+}
+// function handlePinClick(id, side) {
+//   console.log(`Pin ${side} clicked on LED in APP ${id} and ${selectedPin.value}`);
+//   if (selectedPin.value) {
+//     const pinName = `${id}-${side}`;
+//     const existingConnection = connections.value.find(conn => conn.pinName === pinName);
+
+//     if (existingConnection) {
+//       console.log(`Removing connection for pin: ${pinName}`);
+//       connections.value = connections.value.filter(conn => conn.pinName !== pinName);
+//     } else {
+//       console.log(`Adding connection for pin: ${pinName}`);
+//       let led_x = 0;
+//       let led_y = 0;
+
+//       // Encontrar la posición del LED
+//       const led = positions.value.find(item => item.id === id);
+//       if (led) {
+//         led_x = led.position.x;
+//         led_y = led.position.y;
+//       }
+
+//       // Buscar el grupo de pines en el SVG
+//       const group = svgRef.value?.svgEl.querySelector<SVGElement>('#g147');
+//       if (!group) {
+//         console.error('Group #g147 not found in SVG.');
+//         return;
+//       }
+
+//       // Seleccionar el pin correspondiente
+//       const pins = group.querySelectorAll<SVGElement>('[id]');
+//       let pin_x = 0;
+//       let pin_y = 0;
+
+//       pins.forEach(el => {
+//         if (el.id === selectedPin.value) {
+//           const pinRect = el.getBoundingClientRect();
+//           const svgRect = svgRef.value?.svgEl.getBoundingClientRect();
+
+//           if (!svgRect) return;
+
+//           pin_x = pinRect.left - svgRect.left;
+//           pin_y = pinRect.top - svgRect.top;
+//           console.log("Pin position:", { x: pin_x, y: pin_y });
+//         }
+//       });
+
+//       // Agregar la conexión con las coordenadas calculadas
+//       connections.value.push({
+//         pinName,
+//         selectedPin: { id: selectedPin.value, position: { x: pin_x, y: pin_y } },
+//         ledPin: { side, position: { x: led_x, y: led_y } }
+//       });
+//     }
+//   }
+// }
+function clearConnections() {
+  connections.value = [];
+  if (svgRef.value) {
+    const group = svgRef.value.svgEl.querySelector<SVGElement>('#g147');
+    if (group) {
+      const pins = group.querySelectorAll<SVGElement>('[id]');
+      pins.forEach(el => {
+        const pinId = el.id;
+        if ((boardData.pins as string[]).includes(pinId)) {
+          el.setAttribute("fill", "#ffd700");
+        }
+      });
+    }
+  }
+  selectedPin.value = null;
 }
 </script>
 
@@ -207,7 +321,7 @@ function setupMenu() {
           <button @click="setupMenu" id="plus-btn" style="font-size: 2rem; padding: 0.75rem 1.5rem; margin-right: 0.5rem;">+</button>
           <button @click="runProgram" style="font-size: 1.5rem; padding: 0.75rem 1.5rem; margin-right: 0.5rem;">Run</button>
           <button @click="clearConnections" style="font-size: 1.5rem; padding: 0.75rem 1.5rem;">Clear</button>
-          <button @click="handleAddGadget('LED')" style="position: absolute; top: -80px; left: 10px;">Añadir LED</button>
+          <!-- <button @click="handleAddGadget('LED')" style="position: absolute; top: -80px; left: 10px;">Añadir LED</button> -->
 
         </div>
       </div>
@@ -217,20 +331,40 @@ function setupMenu() {
           @handleMouseDown="handleMouseDown"
           ref="svgRef"
         />
+        <!-- <LEDComponent
+          v-for="led in positions.filter(item => item.id.startsWith('led-'))"
+          :key="led.id"
+          :position="led.position"
+          :ledState="led.compState"
+          :selectedPin="selectedPin?.value"
+          :connections="connections"
+          @handleMouseDown="(e) => handleMouseDown(e, led.id)"
+          @handlePinClick="(side) => handlePinClick(led.id,side)"
+        /> -->
         <LEDComponent
           v-for="led in positions.filter(item => item.id.startsWith('led-'))"
           :key="led.id"
           :position="led.position"
           :ledState="led.compState"
+          :selectedPin="selectedPin?.value"
+          :connections="connections"
           @handleMouseDown="(e) => handleMouseDown(e, led.id)"
         />
       </div>
+      <!-- <ConnectionsLines
+        :connections="connections"
+        :svgRef="svgRef"
+        :positions="positions"
+        :workspaceRef="workspaceRef"
+      /> -->
       <ConnectionsLines
         :connections="connections"
         :svgRef="svgRef"
         :positions="positions"
         :workspaceRef="workspaceRef"
-      />
+        :tempLine="tempLine"
+    />
+
     </div>
 
     <!-- <textarea v-model="asmCode" readonly style="width: 100%;" rows="10"></textarea> -->

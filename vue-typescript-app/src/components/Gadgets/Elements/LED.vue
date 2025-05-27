@@ -38,17 +38,25 @@
 import { defineProps, defineEmits } from 'vue'
 
 // Props
-const props = defineProps<{
-  position: { x: number; y: number }
-  ledState: boolean
-}>()
+defineProps<{
+  position: { x: number; y: number };
+  ledState: boolean;
+  id: string;
+  selectedPin: string | null;
+  connections: Array<{ pinName: string; ledPin: 'left' | 'right' }> | [];
+}>();
 
 const emit = defineEmits<{
   (e: 'handleMouseDown', event: MouseEvent, id: string): void
+  (e: 'handlePinClick', side: 'left' | 'right'): void
 }>()
 
 function handleMouseDown(e: MouseEvent) {
   emit('handleMouseDown', e, 'led')
+}
+function handlePinClick(side: 'left' | 'right') {
+  console.log(`Pin ${side} clicked`)
+  emit('handlePinClick', side)
 }
 </script>
   
