@@ -9,11 +9,6 @@ import ConnectionsLines from './components/Gadgets/Lines.vue';
 import Menu from './components/Gadgets/GadgetMenu.vue';
 import LEDComponent from './components/Gadgets/Elements/LED.vue';
 
-// const positions = reactive<Record<string, { x: number, y: number }>>({
-//   board: { x: 300, y: 100 },
-//   led: { x: 200, y: 100 } 
-// });
-const tempLine = ref<{ x1: number, y1: number, x2: number, y2: number } | null>(null);
 const workspaceRef = ref<HTMLDivElement | null>(null);
 
 
@@ -25,13 +20,10 @@ const positions = ref<{ id: string, position: { x: number, y: number }, compStat
     compState: true
   }
 ]);
+// Dibujo de líneas
+const tempLine = ref<{ x1: number, y1: number, x2: number, y2: number } | null>(null);
+const connections = ref<Array<{ x1: number, y1: number, x2: number, y2: number, fromPinId: string, toPinId: string }>>([]);
 
-//const connections = ref(boardData.connections || []);
-const connections = ref<{ 
-  pinName: string; 
-  selectedPin: { id: string; position: { x: number; y: number } }; 
-  ledPin: { side: string; position: { x: number; y: number } } 
-}[]>([]);
 const asmCode = ref([
       "addi a0, a0, 5",
       "addi a1, a1, 1",
@@ -96,7 +88,7 @@ function handleMouseMove(e: MouseEvent) {
     const safeId = CSS.escape(selectedPin.value);
     const pinEl = svgRef.value?.svgEl.querySelector(`#${safeId}`);
     if (!pinEl) return;
-    console.log("Pin Element:", pinEl);
+    //console.log("Pin Element:", pinEl);
 
     const pinRect = pinEl.getBoundingClientRect();
 
@@ -105,9 +97,6 @@ function handleMouseMove(e: MouseEvent) {
 
     const x2 = e.clientX - workspaceRect.left;
     const y2 = e.clientY - workspaceRect.top;
-
-
-
 
     tempLine.value = { x1, y1, x2, y2 };
   }
@@ -120,6 +109,7 @@ function handleMouseMove(e: MouseEvent) {
     element.position.x = (e.clientX - offset.x) / SCALE;
     element.position.y = (e.clientY - offset.y) / SCALE;
   }
+  console.log("Temp Line:", tempLine.value);
 }
 
 function handleAddGadget(type: string) {
@@ -136,10 +126,35 @@ function handleAddGadget(type: string) {
   }
 }
 
+function handlePinClick(ledId,side){
+  console.log(`Pin ${side} clicked on LED with ID: ${ledId} and selected pin: ${selectedPin.value}`);
+  console.log(tempLine.value);
+  if (!selectedPin.value || !tempLine.value) return;
+  console.log("Selected pin:", selectedPin.value);
+  // Guardamos la conexión definitiva usando las coordenadas de tempLine
+  connections.value.push({
+    x1: tempLine.value.x1,
+    y1: tempLine.value.y1,
+    x2: tempLine.value.x2,
+    y2: tempLine.value.y2,
+    fromPinId: selectedPin.value, // el pin seleccionado (en la placa)
+    toPinId: `${ledId}-${side}`   // el pin del led
+  });
+  console.log("Conexión añadida:", connections.value[connections.value.length - 1]);
+
+  // Limpiamos la línea temporal
+  tempLine.value = null;
+
+  // Opcional: deseleccionar el pin seleccionado para empezar una nueva conexión
+  selectedPin.value = null;
+}
+
 
 function handleMouseUp() {
   draggingId.value = null;
-  tempLine.value = null;
+  setTimeout(() => {
+    tempLine.value = null;
+  }, 50); // Espera breve para dejar que el click ocurra
 }
 
 const runProgram = async () => {
@@ -291,6 +306,7 @@ function setupMenu() {
 //     }
 //   }
 // }
+
 function clearConnections() {
   connections.value = [];
   if (svgRef.value) {
@@ -349,6 +365,7 @@ function clearConnections() {
           :selectedPin="selectedPin?.value"
           :connections="connections"
           @handleMouseDown="(e) => handleMouseDown(e, led.id)"
+          @handlePinClick="(side) => handlePinClick(led.id, side)"
         />
       </div>
       <!-- <ConnectionsLines

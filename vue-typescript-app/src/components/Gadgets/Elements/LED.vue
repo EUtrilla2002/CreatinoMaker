@@ -56,7 +56,7 @@ function handleMouseDown(e: MouseEvent) {
 }
 function handlePinClick(side: 'left' | 'right') {
   console.log(`Pin ${side} clicked`)
-  emit('handlePinClick', side)
+  emit('handlePinClick',side)
 }
 </script>
   

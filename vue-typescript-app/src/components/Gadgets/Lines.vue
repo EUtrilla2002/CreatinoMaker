@@ -1,21 +1,32 @@
 <template>
   <svg ref="svgRef" class="connections-lines">
     <line
-      v-if="tempLine"
-      :x1="tempLine.x1"
-      :y1="tempLine.y1"
-      :x2="tempLine.x2"
-      :y2="tempLine.y2"
-      stroke="red"
-      stroke-width="2"
-      stroke-dasharray="5,5"
-    />
+    v-for="(conn, index) in connections"
+    :key="index"
+    :x1="conn.x1"
+    :y1="conn.y1"
+    :x2="conn.x2"
+    :y2="conn.y2"
+    stroke="black"
+    stroke-width="2"
+  />
+  <line
+    v-if="tempLine"
+    :x1="tempLine.x1"
+    :y1="tempLine.y1"
+    :x2="tempLine.x2"
+    :y2="tempLine.y2"
+    stroke="gray"
+    stroke-width="1"
+    stroke-dasharray="5,5"
+  />
   </svg>
   <p v-if="tempLine" style="position: absolute; color: red;">
   Línea temporal: ({{ tempLine.x1 }}, {{ tempLine.y1 }}) → ({{ tempLine.x2 }}, {{ tempLine.y2 }})
 </p>
 
 </template>
+
 
 <script>
 export default {
@@ -36,6 +47,18 @@ export default {
     positions: {
       type: Object,
       required: true
+    },
+    selectedPin: {
+      type: Object,
+      required: false
+    },
+    workspaceRef: {
+      type: Object,
+      required: true
+    },
+    tempLine: {
+      type: Object,
+      default: null
     }
   },
   data() {
@@ -55,6 +78,7 @@ export default {
     }
   },
   methods: {
+    
     drawConnections() {
       console.log('Drawing connections:', this.connections);
 
@@ -67,17 +91,6 @@ export default {
           return null;
         }
         console.log(conn.selectedPin);
-
-
-        
-
-
-        // const pinEl = svgElement.querySelector(`#${conn.pinName}`);
-        // if (!pinEl) {
-        //   console.warn(`Pin element not found for pinName: ${conn.pinName}`);
-        //   return null;
-        // }
-
 
         const ledOffsetX = conn.ledPin.position.x;
         const ledOffsetY = conn.ledPin.position.y;
