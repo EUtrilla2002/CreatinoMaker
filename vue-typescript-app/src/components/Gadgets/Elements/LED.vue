@@ -1,6 +1,7 @@
 <template>
   <div
     class="led-component"
+    :id="id"
     :style="{ left: position.x + 'px', top: position.y + 'px' }"
     @mousedown="handleMouseDown"
     ref="ledRef"

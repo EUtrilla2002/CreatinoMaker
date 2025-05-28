@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, watch, nextTick, onMounted } from 'vue'
+import { ref, reactive, watch, nextTick, onMounted, computed } from 'vue'
 import BoardElement from './components/BoardElements/BoardElement.vue';
 import * as Emulator from "@aloeminium108/risc-v-emulator";
 const { Assembler, CPU } = Emulator.default;
@@ -108,6 +108,7 @@ function handleMouseMove(e: MouseEvent) {
   if (element) {
     element.position.x = (e.clientX - offset.x) / SCALE;
     element.position.y = (e.clientY - offset.y) / SCALE;
+    updateConnectionsPositions();
   }
   console.log("Temp Line:", tempLine.value);
 }
@@ -125,6 +126,58 @@ function handleAddGadget(type: string) {
 
   }
 }
+
+function updateConnectionsPositions() {
+  const workspaceRect = workspaceRef.value?.getBoundingClientRect();
+  if (!workspaceRect) return;
+  console.log("Workspace Rect:", workspaceRect);
+
+  connections.value = connections.value.map(conn => {
+    // Obtener el pin origen
+    console.log("Updating connection:", conn);
+    console.log("From Pin ID:", conn.fromPinId);
+    const svg = svgRef.value.svgEl;
+    if (!svg) return;
+    //console.log("SVG Element:", svg);
+    const group = svg.querySelector<SVGElement>('#g147');
+    console.log(group);
+    if (!group) return;
+    const pins = group.querySelectorAll<SVGElement>('[id]');
+    const fromElement = Array.from(pins).find(el => el.id === conn.fromPinId) as SVGElement | undefined;
+    //console.log("From Element:", fromElement);
+    //const fromElement = document.getElementById(conn.fromPinId);
+    // Obtener el pin destino
+    console.log("To Pin ID:", conn.toPinId);
+    const lastDashIndex = conn.toPinId.lastIndexOf('-');
+    const id = conn.toPinId.substring(0, lastDashIndex);  // "led-1748428485105-0.20556167771505063"
+    const side = conn.toPinId.substring(lastDashIndex + 1); // "right"
+    const toElement = document.getElementById(id);
+    console.log("To Element:", toElement);
+    const ledPinPos = {
+          left: { x: 45, y: 40 },
+          right: { x: 60, y: 40 }
+        };
+
+    if (!fromElement || !toElement) return conn; // Sin cambio si no existe
+    console.log("From Element:", fromElement);
+
+    const fromRect = fromElement.getBoundingClientRect();
+    const toRect = toElement.getBoundingClientRect();
+
+    // Convertir a coordenadas relativas al workspace
+    const x1 = fromRect.left + fromRect.width / 2 - workspaceRect.left;
+    const y1 = fromRect.top + fromRect.height / 2 - workspaceRect.top;
+
+    const x2 = toRect.left + toRect.width - ledPinPos[side].x / 2 - workspaceRect.left ;
+    const y2 = toRect.top + toRect.height - ledPinPos[side].y / 2 - workspaceRect.top ;
+
+    return {
+      ...conn,
+      x1, y1, x2, y2
+    };
+  });
+}
+
 
 function handlePinClick(ledId,side){
   console.log(`Pin ${side} clicked on LED with ID: ${ledId} and selected pin: ${selectedPin.value}`);
@@ -148,6 +201,15 @@ function handlePinClick(ledId,side){
   // Opcional: deseleccionar el pin seleccionado para empezar una nueva conexión
   selectedPin.value = null;
 }
+
+const lines = computed(() => {
+  return connections.value.map(conn => ({
+    x1: conn.x1,
+    y1: conn.y1,
+    x2: conn.x2,
+    y2: conn.y2,
+  }));
+});
 
 
 function handleMouseUp() {
@@ -251,61 +313,7 @@ const showMenu = ref(false);
 function setupMenu() {
   showMenu.value = !showMenu.value; 
 }
-// function handlePinClick(id, side) {
-//   console.log(`Pin ${side} clicked on LED in APP ${id} and ${selectedPin.value}`);
-//   if (selectedPin.value) {
-//     const pinName = `${id}-${side}`;
-//     const existingConnection = connections.value.find(conn => conn.pinName === pinName);
 
-//     if (existingConnection) {
-//       console.log(`Removing connection for pin: ${pinName}`);
-//       connections.value = connections.value.filter(conn => conn.pinName !== pinName);
-//     } else {
-//       console.log(`Adding connection for pin: ${pinName}`);
-//       let led_x = 0;
-//       let led_y = 0;
-
-//       // Encontrar la posición del LED
-//       const led = positions.value.find(item => item.id === id);
-//       if (led) {
-//         led_x = led.position.x;
-//         led_y = led.position.y;
-//       }
-
-//       // Buscar el grupo de pines en el SVG
-//       const group = svgRef.value?.svgEl.querySelector<SVGElement>('#g147');
-//       if (!group) {
-//         console.error('Group #g147 not found in SVG.');
-//         return;
-//       }
-
-//       // Seleccionar el pin correspondiente
-//       const pins = group.querySelectorAll<SVGElement>('[id]');
-//       let pin_x = 0;
-//       let pin_y = 0;
-
-//       pins.forEach(el => {
-//         if (el.id === selectedPin.value) {
-//           const pinRect = el.getBoundingClientRect();
-//           const svgRect = svgRef.value?.svgEl.getBoundingClientRect();
-
-//           if (!svgRect) return;
-
-//           pin_x = pinRect.left - svgRect.left;
-//           pin_y = pinRect.top - svgRect.top;
-//           console.log("Pin position:", { x: pin_x, y: pin_y });
-//         }
-//       });
-
-//       // Agregar la conexión con las coordenadas calculadas
-//       connections.value.push({
-//         pinName,
-//         selectedPin: { id: selectedPin.value, position: { x: pin_x, y: pin_y } },
-//         ledPin: { side, position: { x: led_x, y: led_y } }
-//       });
-//     }
-//   }
-// }
 
 function clearConnections() {
   connections.value = [];
@@ -359,7 +367,7 @@ function clearConnections() {
         /> -->
         <LEDComponent
           v-for="led in positions.filter(item => item.id.startsWith('led-'))"
-          :key="led.id"
+          :id="led.id"
           :position="led.position"
           :ledState="led.compState"
           :selectedPin="selectedPin?.value"
@@ -380,6 +388,7 @@ function clearConnections() {
         :positions="positions"
         :workspaceRef="workspaceRef"
         :tempLine="tempLine"
+        :lines="lines"
     />
 
     </div>
