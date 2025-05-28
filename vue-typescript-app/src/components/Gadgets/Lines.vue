@@ -1,41 +1,40 @@
 <template>
   <svg ref="svgRef" class="connections-lines">
     <line
-    v-for="(conn, index) in connections"
-    :key="index"
-    :x1="conn.x1"
-    :y1="conn.y1"
-    :x2="conn.x2"
-    :y2="conn.y2"
-    stroke="black"
-    stroke-width="2"
-  />
-  <line
-    v-if="tempLine"
-    :x1="tempLine.x1"
-    :y1="tempLine.y1"
-    :x2="tempLine.x2"
-    :y2="tempLine.y2"
-    stroke="gray"
-    stroke-width="1"
-    stroke-dasharray="5,5"
-  />
+      v-for="(line, index) in lines"
+      :key="index"
+      :x1="line.x1"
+      :y1="line.y1"
+      :x2="line.x2"
+      :y2="line.y2"
+      stroke="black"
+      stroke-width="2"
+    />
+    <line
+      v-if="tempLine"
+      :x1="tempLine.x1"
+      :y1="tempLine.y1"
+      :x2="tempLine.x2"
+      :y2="tempLine.y2"
+      stroke="gray"
+      stroke-width="1"
+      stroke-dasharray="5,5"
+    />
   </svg>
+
   <p v-if="tempLine" style="position: absolute; color: red;">
-  Línea temporal: ({{ tempLine.x1 }}, {{ tempLine.y1 }}) → ({{ tempLine.x2 }}, {{ tempLine.y2 }})
-</p>
-
+    Línea temporal: ({{ tempLine.x1 }}, {{ tempLine.y1 }}) → ({{ tempLine.x2 }}, {{ tempLine.y2 }})
+  </p>
 </template>
-
 
 <script>
 export default {
   name: 'ConnectionsLines',
   props: {
-  tempLine: {
-    type: Object,
-    required: false
-  },
+    tempLine: {
+      type: Object,
+      default: null
+    },
     connections: {
       type: Array,
       required: true
@@ -48,66 +47,44 @@ export default {
       type: Object,
       required: true
     },
-    selectedPin: {
-      type: Object,
-      required: false
-    },
     workspaceRef: {
       type: Object,
       required: true
-    },
-    tempLine: {
-      type: Object,
-      default: null
     }
   },
-  data() {
-    return {
-      lines: []
-    }
-  },
-  mounted() {
-    this.drawConnections();
-  },
-  watch: {
-    connections: {
-      handler() {
-        this.drawConnections();
-      },
-      deep: true
-    }
-  },
-  methods: {
-    
-    drawConnections() {
-      console.log('Drawing connections:', this.connections);
+  computed: {
+    lines() {
+      return this.connections.map(({ fromPinId, toPinId }, index) => {
+        console.log(`Conexión ${index}:`, { fromPinId, toPinId });
+        console.log(`Posiciones:`, this.positions[1]);
+        //const fromPos = this.positions[fromPinId];
+        const fromPos = this.positions[0].position;
+        //const toPos = this.positions[toPinId];
+        const toPos = this.positions[1].position;
+        // Si el id tiene formato led-xxxx-xxxx-left/right, separamos el lado
+        let side = null;
+        if (typeof toPinId === 'string' && toPinId.startsWith('led-')) {
+          const parts = toPinId.split('-');
+          if (parts.length >= 4 && (parts[3] === 'left' || parts[3] === 'right')) {
+            side = parts[3];
+          }
+        }
 
-      this.lines = this.connections.map((conn, i) => {
-        console.log(`Connection ${i}:`, conn);
-
-        // Verifica que los datos de la conexión sean válidos
-        if (!conn.selectedPin || !conn.ledPin) {
-          console.warn(`Invalid connection data at index ${i}:`, conn);
+        if (!fromPos || !toPos) {
+          console.warn(`Conexión ${index} omitida: faltan posiciones para`, { fromPinId, toPinId });
           return null;
         }
-        console.log(conn.selectedPin);
-
-        const ledOffsetX = conn.ledPin.position.x;
-        const ledOffsetY = conn.ledPin.position.y;
         const ledPinPos = {
           left: { x: 45, y: 40 },
           right: { x: 60, y: 40 }
         };
-
-        const x1 = conn.selectedPin.position.x;
-        const y1 = conn.selectedPin.position.y;
-        const x2 = ledOffsetX + ledPinPos[conn.ledPin.side].x;
-        const y2 = ledOffsetY + ledPinPos[conn.ledPin.side].y;
-
-        return { x1, y1, x2, y2 };
+        return {
+          x1: fromPos.x,
+          y1: fromPos.y,
+          x2: toPos.x + ledPinPos[side].x,
+          y2: toPos.y + ledPinPos[side].y
+        };
       }).filter(Boolean);
-
-      console.log('Lines drawn:', this.lines);
     }
   }
 }

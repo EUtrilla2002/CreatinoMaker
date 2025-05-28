@@ -22,7 +22,7 @@ const positions = ref<{ id: string, position: { x: number, y: number }, compStat
 ]);
 // Dibujo de líneas
 const tempLine = ref<{ x1: number, y1: number, x2: number, y2: number } | null>(null);
-const connections = ref<Array<{ x1: number, y1: number, x2: number, y2: number, fromPinId: string, toPinId: string }>>([]);
+const connections = ref<Array<{fromPinId: string, toPinId: string }>>([]);
 
 const asmCode = ref([
       "addi a0, a0, 5",
@@ -132,13 +132,17 @@ function handlePinClick(ledId,side){
   if (!selectedPin.value || !tempLine.value) return;
   console.log("Selected pin:", selectedPin.value);
   // Guardamos la conexión definitiva usando las coordenadas de tempLine
-  connections.value.push({
-    x1: tempLine.value.x1,
-    y1: tempLine.value.y1,
-    x2: tempLine.value.x2,
-    y2: tempLine.value.y2,
-    fromPinId: selectedPin.value, // el pin seleccionado (en la placa)
-    toPinId: `${ledId}-${side}`   // el pin del led
+  // connections.value.push({
+  //   x1: tempLine.value.x1,
+  //   y1: tempLine.value.y1,
+  //   x2: tempLine.value.x2,
+  //   y2: tempLine.value.y2,
+  //   fromPinId: selectedPin.value, // el pin seleccionado (en la placa)
+  //   toPinId: `${ledId}-${side}`   // el pin del led
+  // });
+    connections.value.push({
+    fromPinId: selectedPin.value,
+    toPinId: `${ledId}-${side}`
   });
   console.log("Conexión añadida:", connections.value[connections.value.length - 1]);
 
@@ -251,61 +255,6 @@ const showMenu = ref(false);
 function setupMenu() {
   showMenu.value = !showMenu.value; 
 }
-// function handlePinClick(id, side) {
-//   console.log(`Pin ${side} clicked on LED in APP ${id} and ${selectedPin.value}`);
-//   if (selectedPin.value) {
-//     const pinName = `${id}-${side}`;
-//     const existingConnection = connections.value.find(conn => conn.pinName === pinName);
-
-//     if (existingConnection) {
-//       console.log(`Removing connection for pin: ${pinName}`);
-//       connections.value = connections.value.filter(conn => conn.pinName !== pinName);
-//     } else {
-//       console.log(`Adding connection for pin: ${pinName}`);
-//       let led_x = 0;
-//       let led_y = 0;
-
-//       // Encontrar la posición del LED
-//       const led = positions.value.find(item => item.id === id);
-//       if (led) {
-//         led_x = led.position.x;
-//         led_y = led.position.y;
-//       }
-
-//       // Buscar el grupo de pines en el SVG
-//       const group = svgRef.value?.svgEl.querySelector<SVGElement>('#g147');
-//       if (!group) {
-//         console.error('Group #g147 not found in SVG.');
-//         return;
-//       }
-
-//       // Seleccionar el pin correspondiente
-//       const pins = group.querySelectorAll<SVGElement>('[id]');
-//       let pin_x = 0;
-//       let pin_y = 0;
-
-//       pins.forEach(el => {
-//         if (el.id === selectedPin.value) {
-//           const pinRect = el.getBoundingClientRect();
-//           const svgRect = svgRef.value?.svgEl.getBoundingClientRect();
-
-//           if (!svgRect) return;
-
-//           pin_x = pinRect.left - svgRect.left;
-//           pin_y = pinRect.top - svgRect.top;
-//           console.log("Pin position:", { x: pin_x, y: pin_y });
-//         }
-//       });
-
-//       // Agregar la conexión con las coordenadas calculadas
-//       connections.value.push({
-//         pinName,
-//         selectedPin: { id: selectedPin.value, position: { x: pin_x, y: pin_y } },
-//         ledPin: { side, position: { x: led_x, y: led_y } }
-//       });
-//     }
-//   }
-// }
 
 function clearConnections() {
   connections.value = [];
@@ -380,7 +329,7 @@ function clearConnections() {
         :positions="positions"
         :workspaceRef="workspaceRef"
         :tempLine="tempLine"
-    />
+      />
 
     </div>
 
