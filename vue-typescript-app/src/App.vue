@@ -154,8 +154,8 @@ function updateConnectionsPositions() {
     const toElement = document.getElementById(id);
     console.log("To Element:", toElement);
     const ledPinPos = {
-          left: { x: 45, y: 40 },
-          right: { x: 60, y: 40 }
+          left: { x: 105, y: 45 },
+          right: { x: 60, y: 45 }
         };
 
     if (!fromElement || !toElement) return conn; // Sin cambio si no existe
