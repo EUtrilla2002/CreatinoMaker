@@ -32,11 +32,48 @@
         style="cursor: pointer; pointer-events: auto;"
         @click.stop="handlePinClick('right')"
       />
+      <!-- Botón Config -->
+    <circle
+        cx="40"
+        cy="10"
+        r="8"
+        fill="transparent"
+        style="cursor: pointer; pointer-events: auto;"
+        ref="configButtonRef"
+        @click="handleConfigClick"
+      />
+      <text
+        x="40"
+        y="14"
+        text-anchor="middle"
+        alignment-baseline="middle"
+        font-size="12"
+        fill="white"
+        style="pointer-events: none;"
+      >
+        ⚙️
+      </text>
     </svg>
+    <ConfigMenu
+      v-if="showConfigMenu"
+      :style="{
+        position: 'absolute',
+        left: configMenuPosition.x + 'px',
+        top: configMenuPosition.y + 'px',
+        zIndex: 1000,
+        
+      }"
+    />
   </div>
 </template>
 <script setup lang="ts">
-import { defineProps, defineEmits } from 'vue'
+import { defineProps, defineEmits, ref  } from 'vue'
+import ConfigMenu from './ConfigMenu.vue'
+
+const showConfigMenu = ref(false)
+const configMenuPosition = ref({ x: 0, y: 0 })
+const configButtonRef = ref<SVGCircleElement | null>(null)
+
 
 // Props
 defineProps<{
@@ -59,68 +96,26 @@ function handlePinClick(side: 'left' | 'right') {
   console.log(`Pin ${side} clicked`)
   emit('handlePinClick',side)
 }
+function handleConfigClick(event: MouseEvent) {
+  event.stopPropagation()
+  showConfigMenu.value = !showConfigMenu.value
+
+  if (showConfigMenu.value && configButtonRef.value) {
+    const buttonRect = configButtonRef.value.getBoundingClientRect()
+    const containerRect = (configButtonRef.value.closest('.led-component') as HTMLElement).getBoundingClientRect()
+
+    // Posición relativa al contenedor del LED
+    configMenuPosition.value = {
+      x: buttonRect.left - containerRect.left + buttonRect.width + 4,
+      y: buttonRect.top - containerRect.top,
+    }
+
+    console.log('Relative config menu position:', configMenuPosition.value)
+  }
+}
+
 </script>
-  
-  <!-- <script>
-  export default {
-    props: {
-      id: {
-        type: String,
-        required: true,
-      },
-      position: {
-        type: Object,
-        required: true,
-      },
-      handleMouseDown: {
-        type: Function,
-        required: true,
-      },
-      ledState: {
-        type: Boolean,
-        default: false,
-      },
-      selectedPin: {
-        type: String,
-        default: null,
-      },
-      setConnections: {
-        type: Function,
-        required: true,
-      },
-      setSelectedPin: {
-        type: Function,
-        required: true,
-      },
-    },
-    methods: {
-      handleClick(event) {
-        event.stopPropagation();
-        if (!this.selectedPin) {
-          this.setSelectedPin(this.id);
-        }
-      },
-      handlePinClick(side) {
-        if (this.selectedPin) {
-          this.setConnections((conns) => [
-            ...conns,
-            { pinName: this.selectedPin, ledPin: side },
-          ]);
-          this.setSelectedPin(null);
-        } else {
-          alert("Primero selecciona un pin en la placa");
-        }
-      },
-    },
-    mounted() {
-      this.$el.addEventListener('click', this.handleClick);
-    },
-    beforeDestroy() {
-      this.$el.removeEventListener('click', this.handleClick);
-    },
-  };
-  </script> -->
-  
+
   <style scoped>
   .led-component {
     position: absolute;

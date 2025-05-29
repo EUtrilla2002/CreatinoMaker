@@ -22,7 +22,19 @@ const positions = ref<{ id: string, position: { x: number, y: number }, compStat
 ]);
 // Dibujo de líneas
 const tempLine = ref<{ x1: number, y1: number, x2: number, y2: number } | null>(null);
-const connections = ref<Array<{ x1: number, y1: number, x2: number, y2: number, fromPinId: string, toPinId: string }>>([]);
+const connections = ref<Array<{
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+  cx1: number,
+  cy1: number,
+  cx2: number,
+  cy2: number,
+  fromPinId: string,
+  toPinId: string
+}>>([]);
+
 
 const asmCode = ref([
       "addi a0, a0, 5",
@@ -179,26 +191,34 @@ function updateConnectionsPositions() {
 }
 
 
-function handlePinClick(ledId,side){
+function handlePinClick(ledId, side) {
   console.log(`Pin ${side} clicked on LED with ID: ${ledId} and selected pin: ${selectedPin.value}`);
-  console.log(tempLine.value);
   if (!selectedPin.value || !tempLine.value) return;
-  console.log("Selected pin:", selectedPin.value);
-  // Guardamos la conexión definitiva usando las coordenadas de tempLine
+
+  const { x1, y1, x2, y2 } = tempLine.value;
+
+  // Puntos de control: por defecto hacemos una curva vertical tipo "S"
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const cx1 = x1 + dx / 2;
+  const cy1 = y1;
+  const cx2 = x1 + dx / 2;
+  const cy2 = y2;
+
   connections.value.push({
-    x1: tempLine.value.x1,
-    y1: tempLine.value.y1,
-    x2: tempLine.value.x2,
-    y2: tempLine.value.y2,
-    fromPinId: selectedPin.value, // el pin seleccionado (en la placa)
-    toPinId: `${ledId}-${side}`   // el pin del led
+    x1,
+    y1,
+    x2,
+    y2,
+    cx1,
+    cy1,
+    cx2,
+    cy2,
+    fromPinId: selectedPin.value,
+    toPinId: `${ledId}-${side}`
   });
-  console.log("Conexión añadida:", connections.value[connections.value.length - 1]);
 
-  // Limpiamos la línea temporal
   tempLine.value = null;
-
-  // Opcional: deseleccionar el pin seleccionado para empezar una nueva conexión
   selectedPin.value = null;
 }
 
@@ -208,8 +228,13 @@ const lines = computed(() => {
     y1: conn.y1,
     x2: conn.x2,
     y2: conn.y2,
+    cx1: conn.cx1,
+    cy1: conn.cy1,
+    cx2: conn.cx2,
+    cy2: conn.cy2,
   }));
 });
+
 
 
 function handleMouseUp() {

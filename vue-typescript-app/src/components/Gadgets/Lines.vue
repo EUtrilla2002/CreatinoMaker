@@ -1,15 +1,32 @@
 <template>
   <svg ref="svgRef" class="connections-lines">
-    <line
+    <path
       v-for="(line, index) in lines"
       :key="index"
-      :x1="line.x1"
-      :y1="line.y1"
-      :x2="line.x2"
-      :y2="line.y2"
+      :d="generateCurvePath(line)"
       stroke="black"
       stroke-width="2"
+      fill="none"
     />
+    <!-- Puntos de control
+    <circle
+      v-for="(line, index) in lines"
+      :key="'cx1-' + index"
+      :cx="line.cx1"
+      :cy="line.cy1"
+      r="6"
+      fill="red"
+      @mousedown="startDrag(index, 'cx1', 'cy1')"
+    />
+    <circle
+      v-for="(line, index) in lines"
+      :key="'cx2-' + index"
+      :cx="line.cx2"
+      :cy="line.cy2"
+      r="6"
+      fill="blue"
+      @mousedown="startDrag(index, 'cx2', 'cy2')"
+    /> -->
     <line
       v-if="tempLine"
       :x1="tempLine.x1"
@@ -38,6 +55,21 @@ export default {
       type: Object,
       default: null
     }
+  },
+  data() {
+    return {
+      dragging: null // { index, controlXKey, controlYKey }
+    }
+  },
+  methods: {
+    generateCurvePath({ x1, y1, x2, y2, cx1, cy1, cx2, cy2 }) {
+      return `M ${x1},${y1} C ${cx1},${cy1} ${cx2},${cy2} ${x2},${y2}`;
+    },
+     startDrag(index, controlXKey, controlYKey) {
+    this.dragging = { index, controlXKey, controlYKey };
+    window.addEventListener('mousemove', this.onMouseMove);
+    window.addEventListener('mouseup', this.stopDrag);
+  },
   }
 }
 </script>
