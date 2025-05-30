@@ -27,7 +27,12 @@
         <div class="mt-3 text-white text-sm">
           Color seleccionado: <span :style="{ color }">{{ color }}</span>
         </div>
-
+        <button
+          class="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 transition"
+          @click="$emit('update:modelValue', color)"
+        >
+          Aplicar Color
+        </button>
         <button
           class="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-500 transition"
           @click="$emit('close')"

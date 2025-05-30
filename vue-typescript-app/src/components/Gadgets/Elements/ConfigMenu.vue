@@ -24,7 +24,7 @@
       v-if="selectedItem === 'Color'"
       :modelValue="selectedColor"
       :position="popupPosition"
-      @update:modelValue="selectedColor = $event"
+      @update:modelValue="onColorChange"
       @close="selectedItem = null"
     />
   </div>
@@ -37,14 +37,15 @@ import ColorPickerPopup from './ColorPickerPopup.vue'
 const selectedItem = ref<string | null>(null)
 const selectedColor = ref('#000000')
 const popupPosition = ref({ x: 0, y: 0 })
-
+const emit = defineEmits(['update:modelValue', 'flip', 'rotate','delete']) 
 
 const categories = ref([
   {
     name: 'Settings',
     items: [
       { label: 'Color', icon: 'palette' },
-      { label: 'Flip', icon: 'rotate' },
+      { label: 'Flip', icon: 'right-left' },
+      { label: 'Rotate', icon: 'rotate' },
       { label: 'Delete', icon: 'trash' },
     ],
   },
@@ -70,7 +71,24 @@ const onItemClick = async (label: string) => {
       }
     }
   }
+  if (label === 'Flip') {
+    console.log('Flip action triggered')
+    emit('flip') 
+    return
+  }
+  if (label === 'Rotate') {
+    emit('rotate') // emite el evento rotate
+    return
+  }
+  if (label === 'Delete') { 
+    emit('delete'); 
+    return 
+  }
   selectedItem.value = selectedItem.value === label ? null : label
+}
+const onColorChange = (color: string) => {
+  selectedColor.value = color
+  emit('update:modelValue', color) // <--- propaga el evento hacia LED.vue
 }
 </script>
 

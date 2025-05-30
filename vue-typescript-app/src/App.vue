@@ -138,6 +138,13 @@ function handleAddGadget(type: string) {
 
   }
 }
+function removeLed(id: string) {
+  positions.value = positions.value.filter(item => item.id !== id)
+  connections.value = connections.value.filter(conn =>
+  !conn.fromPinId.startsWith(id) && !conn.toPinId.startsWith(id)
+)
+}
+
 
 function updateConnectionsPositions() {
   const workspaceRect = workspaceRef.value?.getBoundingClientRect();
@@ -399,6 +406,7 @@ function clearConnections() {
           :connections="connections"
           @handleMouseDown="(e) => handleMouseDown(e, led.id)"
           @handlePinClick="(side) => handlePinClick(led.id, side)"
+          @delete="removeLed(led.id)"
         />
       </div>
       <!-- <ConnectionsLines

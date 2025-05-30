@@ -2,58 +2,61 @@
   <div
     class="led-component"
     :id="id"
-    :style="{ left: position.x + 'px', top: position.y + 'px' }"
+    :style="{ left: position.x + 'px', top: position.y + 'px'}"
     @mousedown="handleMouseDown"
+    
     ref="ledRef"
   >
-    <wokwi-led color="red" :value="ledState ? false : ''"></wokwi-led>
-    <svg
-      width="50"
-      height="50"
-      style="position: absolute; top: 0; left: 0; pointer-events: none;"
-    >
-      <!-- Patita izquierda -->
-      <rect
-        x="12"
-        y="40"
-        width="5"
-        height="5"
-        fill="rgba(255, 0, 0, 0.3)"
-        style="cursor: pointer; pointer-events: auto;"
-        @click.stop="handlePinClick('left')"
-      />
-      <!-- Patita derecha -->
-      <rect
-        x="22"
-        y="40"
-        width="5"
-        height="5"
-        fill="rgba(255, 0, 0, 0.3)"
-        style="cursor: pointer; pointer-events: auto;"
-        @click.stop="handlePinClick('right')"
-      />
-      <!-- Botón Config -->
-    <circle
-        cx="40"
-        cy="10"
-        r="8"
-        fill="transparent"
-        style="cursor: pointer; pointer-events: auto;"
-        ref="configButtonRef"
-        @click="handleConfigClick"
-      />
-      <text
-        x="40"
-        y="14"
-        text-anchor="middle"
-        alignment-baseline="middle"
-        font-size="12"
-        fill="white"
-        style="pointer-events: none;"
-      >
-        ⚙️
-      </text>
-    </svg>
+    <div :style="{ transform: `${flipped ? 'scaleX(-1)' : ''} rotate(${rotation}deg)` }">
+        <wokwi-led :color="ledColor" :value="ledState ? false : '' "></wokwi-led>
+        <svg
+          width="50"
+          height="50"
+          style="position: absolute; top: 0; left: 0; pointer-events: none;"
+        >
+          <!-- Patita izquierda -->
+          <rect
+            x="12"
+            y="40"
+            width="5"
+            height="5"
+            fill="rgba(255, 0, 0, 0.3)"
+            style="cursor: pointer; pointer-events: auto;"
+            @click.stop="handlePinClick('left')"
+          />
+          <!-- Patita derecha -->
+          <rect
+            x="22"
+            y="40"
+            width="5"
+            height="5"
+            fill="rgba(255, 0, 0, 0.3)"
+            style="cursor: pointer; pointer-events: auto;"
+            @click.stop="handlePinClick('right')"
+          />
+          <!-- Botón Config -->
+        <circle
+            cx="40"
+            cy="10"
+            r="8"
+            fill="transparent"
+            style="cursor: pointer; pointer-events: auto;"
+            ref="configButtonRef"
+            @click="handleConfigClick"
+          />
+          <text
+            x="40"
+            y="14"
+            text-anchor="middle"
+            alignment-baseline="middle"
+            font-size="12"
+            fill="white"
+            style="pointer-events: none;"
+          >
+            ⚙️
+          </text>
+        </svg>
+      </div>
     <ConfigMenu
       v-if="showConfigMenu"
       :style="{
@@ -61,8 +64,11 @@
         left: configMenuPosition.x + 'px',
         top: configMenuPosition.y + 'px',
         zIndex: 1000,
-        
       }"
+      @update:modelValue="ledColor = $event"ç
+      @flip="flipped = !flipped"
+      @rotate="rotation = (rotation + 90) % 360"
+      @delete="emit('delete', id)"
     />
   </div>
 </template>
@@ -73,8 +79,10 @@ import ConfigMenu from './ConfigMenu.vue'
 const showConfigMenu = ref(false)
 const configMenuPosition = ref({ x: 0, y: 0 })
 const configButtonRef = ref<SVGCircleElement | null>(null)
+const ledColor = ref('red') // color inicial
 
-
+const rotation = ref(0)
+const flipped = ref(false)
 // Props
 defineProps<{
   position: { x: number; y: number };
@@ -87,6 +95,8 @@ defineProps<{
 const emit = defineEmits<{
   (e: 'handleMouseDown', event: MouseEvent, id: string): void
   (e: 'handlePinClick', side: 'left' | 'right'): void
+  (e: 'update:modelValue', color: string): void 
+  (e: 'delete', id: string): void
 }>()
 
 function handleMouseDown(e: MouseEvent) {
