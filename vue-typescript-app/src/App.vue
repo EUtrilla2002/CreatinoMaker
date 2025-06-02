@@ -187,7 +187,7 @@ function updateConnectionsPositions() {
     console.log("From Element:", fromElement);
 
     const fromRect = fromElement.getBoundingClientRect();
-    const toRect = toElement.getBoundingClientRect();
+    //const toRect = toElement.getBoundingClientRect();
 
     // Convertir a coordenadas relativas al workspace
     const x1 = fromRect.left + fromRect.width / 2 - workspaceRect.left;
@@ -353,6 +353,11 @@ watch(() => boardData.pins, () => {
     setupPinListeners();
   });
 });
+watch(positions, (newPositions) => {
+  console.log('Positions changed:', newPositions);
+  updateConnectionsPositions();
+}, { deep: true });
+
 const showMenu = ref(false);
 function setupMenu() {
   showMenu.value = !showMenu.value; 
@@ -399,16 +404,6 @@ function clearConnections() {
           @handleMouseDown="handleMouseDown"
           ref="svgRef"
         />
-        <!-- <LEDComponent
-          v-for="led in positions.filter(item => item.id.startsWith('led-'))"
-          :key="led.id"
-          :position="led.position"
-          :ledState="led.compState"
-          :selectedPin="selectedPin?.value"
-          :connections="connections"
-          @handleMouseDown="(e) => handleMouseDown(e, led.id)"
-          @handlePinClick="(side) => handlePinClick(led.id,side)"
-        /> -->
         <LEDComponent
           v-for="led in positions.filter(item => item.id.startsWith('led-'))"
           :id="led.id"

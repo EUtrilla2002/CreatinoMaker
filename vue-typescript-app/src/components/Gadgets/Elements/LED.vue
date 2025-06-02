@@ -14,15 +14,7 @@
           height="50"
           style="position: absolute; top: 0; left: 0; pointer-events: none;"
         >
-        <!-- <circle
-          :cx="20"
-          :cy="25"
-          r="2"
-          fill="lime"
-          stroke="black"
-          stroke-width="0.5"
-        /> -->
-                  <!-- Patita izquierda -->
+         <!-- Patita izquierda -->
           <rect
             x="12"
             y="40"
@@ -87,7 +79,7 @@ import { defineProps, defineEmits, ref, defineExpose } from 'vue'
 import ConfigMenu from './ConfigMenu.vue'
 
 const showConfigMenu = ref(false)
-const configMenuPosition = ref({ x: 0, y: 0 })
+const configMenuPosition = ref({ x: 10, y: 10 })
 const configButtonRef = ref<SVGCircleElement | null>(null)
 const ledColor = ref('red') // color inicial
 
@@ -141,18 +133,16 @@ function handleConfigClick(event: MouseEvent) {
   showConfigMenu.value = !showConfigMenu.value
 
   if (showConfigMenu.value && configButtonRef.value) {
-    const buttonRect = configButtonRef.value.getBoundingClientRect()
-    const containerRect = (configButtonRef.value.closest('.led-component') as HTMLElement).getBoundingClientRect()
-
-    // Posición relativa al contenedor del LED
+    //TODO: ¿Movemos el menú según lo pida el alumno?
     configMenuPosition.value = {
-      x: buttonRect.left - containerRect.left + buttonRect.width + 4,
-      y: buttonRect.top - containerRect.top,
+      x: 50,
+      y: 0,     
     }
 
     console.log('Relative config menu position:', configMenuPosition.value)
   }
 }
+
 
 </script>
 

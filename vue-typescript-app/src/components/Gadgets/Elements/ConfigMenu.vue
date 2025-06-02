@@ -72,6 +72,7 @@ const onItemClick = async (label: string) => {
     }
   }
   if (label === 'Flip') {
+    // Y si no fuera solo con un botón, sino con un evento? EJ: Ctrl + Flechita
     console.log('Flip action triggered')
     emit('flip') 
     return
