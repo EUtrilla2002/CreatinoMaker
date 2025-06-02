@@ -13,13 +13,16 @@ const workspaceRef = ref<HTMLDivElement | null>(null);
 
 
 const compState = ref(true);
-const positions = ref<{ id: string, position: { x: number, y: number }, compState: boolean }[]>([
+const positions = ref<{ id: string, position: { x: number, y: number }, compState: boolean ,   flipped: boolean,  rotation: number }[]>([
   {
     id: 'board',
     position: { x: 300, y: 100 },
-    compState: true
+    compState: true,
+    flipped: false,
+    rotation: 0
   }
 ]);
+const ledRefs = ref<Record<string, any>>({});
 // Dibujo de líneas
 const tempLine = ref<{ x1: number, y1: number, x2: number, y2: number } | null>(null);
 const connections = ref<Array<{
@@ -74,22 +77,16 @@ function handleMouseDown(e: MouseEvent, id: string) {
   offset.y = (e.clientY - element.position.y * SCALE)
 }
 
-// function handleMouseMove(e: MouseEvent) {
-//   if (!draggingId.value) return
-//   console.log("Dragging ID:", draggingId.value);
-//   console.log("Status:", {
-//   length: positions.value.length,
-//   elements: JSON.stringify(positions.value, null, 2),
-//   raw: positions.value
-// });
-  
-//   positions.value.forEach((item) => {
-//     if (item.id === draggingId.value) {
-//       item.position.x = (e.clientX - offset.x) / SCALE
-//       item.position.y = (e.clientY - offset.y) / SCALE
-//     }
-//   });
-// }
+function handleFlip(id: string) {
+  const led = positions.value.find(item => item.id === id);
+  if (led) led.flipped = !led.flipped;
+}
+
+function handleRotate(id: string) {
+  const led = positions.value.find(item => item.id === id);
+  if (led) led.rotation = (led.rotation + 90) % 360;
+}
+
 function handleMouseMove(e: MouseEvent) {
   if (!draggingId.value && selectedPin.value) {
     const workspaceRect = workspaceRef.value?.getBoundingClientRect();
@@ -132,10 +129,20 @@ function handleAddGadget(type: string) {
     positions.value.push({
       id,
       position: { x: 200 + positions.value.length * 40, y: 100 }, // Espaciado simple
-      compState: true
+      compState: true,
+      flipped: false,
+      rotation: 0
+
     });
     console.log(positions.value.length);
 
+  }
+}
+function handleLedStateChange(id: string, state: { flipped: boolean; rotation: number }) {
+  const led = positions.value.find(item => item.id === id);
+  if (led) {
+    led.flipped = state.flipped;
+    led.rotation = state.rotation;
   }
 }
 function removeLed(id: string) {
@@ -144,7 +151,6 @@ function removeLed(id: string) {
   !conn.fromPinId.startsWith(id) && !conn.toPinId.startsWith(id)
 )
 }
-
 
 function updateConnectionsPositions() {
   const workspaceRect = workspaceRef.value?.getBoundingClientRect();
@@ -172,10 +178,10 @@ function updateConnectionsPositions() {
     const side = conn.toPinId.substring(lastDashIndex + 1); // "right"
     const toElement = document.getElementById(id);
     console.log("To Element:", toElement);
-    const ledPinPos = {
-          left: { x: 105, y: 45 },
-          right: { x: 60, y: 45 }
-        };
+    // const ledPinPos = {
+    //       left: { x: 105, y: 45 },
+    //       right: { x: 60, y: 45 }
+    //     };
 
     if (!fromElement || !toElement) return conn; // Sin cambio si no existe
     console.log("From Element:", fromElement);
@@ -187,8 +193,14 @@ function updateConnectionsPositions() {
     const x1 = fromRect.left + fromRect.width / 2 - workspaceRect.left;
     const y1 = fromRect.top + fromRect.height / 2 - workspaceRect.top;
 
-    const x2 = toRect.left + toRect.width - ledPinPos[side].x / 2 - workspaceRect.left ;
-    const y2 = toRect.top + toRect.height - ledPinPos[side].y / 2 - workspaceRect.top ;
+    const ledValues = ledRefs.value[0]?.getPinCoords();
+    const x2 = (side === 'left' ? ledValues.left.x : ledValues.right.x) - workspaceRect.left;
+    const y2 = (side === 'left' ? ledValues.left.y : ledValues.right.y) - workspaceRect.top;
+
+    //const ledPinPos = getLedPinPos(side as 'left' | 'right', positions.value.find(item => item.id === id)?.flipped || false, positions.value.find(item => item.id === id)?.rotation || 0);
+
+    // const x2 = toRect.left + toRect.width - ledPinPos.x / 2 - workspaceRect.left ;
+    // const y2 = toRect.top + toRect.height - ledPinPos.y / 2 - workspaceRect.top ;
 
     return {
       ...conn,
@@ -407,6 +419,10 @@ function clearConnections() {
           @handleMouseDown="(e) => handleMouseDown(e, led.id)"
           @handlePinClick="(side) => handlePinClick(led.id, side)"
           @delete="removeLed(led.id)"
+          @flip="() => handleFlip(led.id)"
+          @rotate="() => handleRotate(led.id)"
+          @updateState="(state) => handleLedStateChange(led.id, state)"
+          ref="ledRefs"
         />
       </div>
       <!-- <ConnectionsLines

@@ -14,7 +14,15 @@
           height="50"
           style="position: absolute; top: 0; left: 0; pointer-events: none;"
         >
-          <!-- Patita izquierda -->
+        <!-- <circle
+          :cx="20"
+          :cy="25"
+          r="2"
+          fill="lime"
+          stroke="black"
+          stroke-width="0.5"
+        /> -->
+                  <!-- Patita izquierda -->
           <rect
             x="12"
             y="40"
@@ -23,6 +31,7 @@
             fill="rgba(255, 0, 0, 0.3)"
             style="cursor: pointer; pointer-events: auto;"
             @click.stop="handlePinClick('left')"
+            ref="leftPinRef"
           />
           <!-- Patita derecha -->
           <rect
@@ -33,6 +42,7 @@
             fill="rgba(255, 0, 0, 0.3)"
             style="cursor: pointer; pointer-events: auto;"
             @click.stop="handlePinClick('right')"
+            ref="rightPinRef"
           />
           <!-- Botón Config -->
         <circle
@@ -66,14 +76,14 @@
         zIndex: 1000,
       }"
       @update:modelValue="ledColor = $event"ç
-      @flip="flipped = !flipped"
-      @rotate="rotation = (rotation + 90) % 360"
+      @flip="handleFlip"
+      @rotate="handleRotate"
       @delete="emit('delete', id)"
     />
   </div>
 </template>
 <script setup lang="ts">
-import { defineProps, defineEmits, ref  } from 'vue'
+import { defineProps, defineEmits, ref, defineExpose } from 'vue'
 import ConfigMenu from './ConfigMenu.vue'
 
 const showConfigMenu = ref(false)
@@ -83,6 +93,8 @@ const ledColor = ref('red') // color inicial
 
 const rotation = ref(0)
 const flipped = ref(false)
+const leftPinRef = ref<SVGRectElement | null>(null)
+const rightPinRef = ref<SVGRectElement | null>(null)
 // Props
 defineProps<{
   position: { x: number; y: number };
@@ -91,13 +103,31 @@ defineProps<{
   selectedPin: string | null;
   connections: Array<{ pinName: string; ledPin: 'left' | 'right' }> | [];
 }>();
+function getPinCoords() {
+  const left = leftPinRef.value?.getBoundingClientRect()
+  const right = rightPinRef.value?.getBoundingClientRect()
+  return {
+    left,
+    right
+  }
+}
+defineExpose({ getPinCoords })
 
 const emit = defineEmits<{
   (e: 'handleMouseDown', event: MouseEvent, id: string): void
   (e: 'handlePinClick', side: 'left' | 'right'): void
   (e: 'update:modelValue', color: string): void 
   (e: 'delete', id: string): void
+  (e: 'updateState', state: { flipped: boolean; rotation: number }): void
 }>()
+function handleFlip() {
+  flipped.value = !flipped.value
+  emit('updateState', { flipped: flipped.value, rotation: rotation.value })
+}
+function handleRotate() {
+  rotation.value = (rotation.value + 90) % 360
+  emit('updateState', { flipped: flipped.value, rotation: rotation.value })
+}
 
 function handleMouseDown(e: MouseEvent) {
   emit('handleMouseDown', e, 'led')
