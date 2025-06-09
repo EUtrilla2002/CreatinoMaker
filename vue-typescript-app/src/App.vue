@@ -83,6 +83,29 @@ function handleRotate(id: string) {
 }
 
 function handleMouseMove(e: MouseEvent) {
+    if (!draggingId.value && selectedPin.value) {
+    const workspaceRect = workspaceRef.value?.getBoundingClientRect();
+    if (!workspaceRect) return;
+
+    // console.log("SVG Rect:", svgRect);
+
+    const safeId = CSS.escape(selectedPin.value);
+    const pinEl = svgRef.value?.svgEl.querySelector(`#${safeId}`);
+    if (!pinEl) return;
+    //console.log("Pin Element:", pinEl);
+
+    const pinRect = pinEl.getBoundingClientRect();
+
+    const x1 = (pinRect.left + pinRect.width / 2) - workspaceRect.left;
+    const y1 = (pinRect.top + pinRect.height / 2) - workspaceRect.top;
+
+    const x2 = e.clientX - workspaceRect.left;
+    const y2 = e.clientY - workspaceRect.top;
+
+    tempLine.value = { x1, y1, x2, y2 };
+  }
+
+  // Movimiento normal de componentes
   if (!draggingId.value) return;
 
   const element = positions.value.find(item => item.id === draggingId.value);
@@ -126,31 +149,52 @@ function removeLed(id: string) {
 function updateConnectionsPositions() {
   const workspaceRect = workspaceRef.value?.getBoundingClientRect();
   if (!workspaceRect) return;
+  console.log("Workspace Rect:", workspaceRect);
 
   connections.value = connections.value.map(conn => {
+    // Obtener el pin origen
+    console.log("Updating connection:", conn);
+    console.log("From Pin ID:", conn.fromPinId);
     const svg = svgRef.value.svgEl;
-    if (!svg) return conn;
+    if (!svg) return;
+    //console.log("SVG Element:", svg);
     const group = svg.querySelector<SVGElement>('#g147');
-    if (!group) return conn;
-
+    console.log(group);
+    if (!group) return;
     const pins = group.querySelectorAll<SVGElement>('[id]');
     const fromElement = Array.from(pins).find(el => el.id === conn.fromPinId) as SVGElement | undefined;
+    //console.log("From Element:", fromElement);
+    //const fromElement = document.getElementById(conn.fromPinId);
+    // Obtener el pin destino
+    console.log("To Pin ID:", conn.toPinId);
     const lastDashIndex = conn.toPinId.lastIndexOf('-');
-    const id = conn.toPinId.substring(0, lastDashIndex);
-    const side = conn.toPinId.substring(lastDashIndex + 1);
+    const id = conn.toPinId.substring(0, lastDashIndex);  // "led-1748428485105-0.20556167771505063"
+    const side = conn.toPinId.substring(lastDashIndex + 1); // "right"
     const toElement = document.getElementById(id);
+    console.log("To Element:", toElement);
+    // const ledPinPos = {
+    //       left: { x: 105, y: 45 },
+    //       right: { x: 60, y: 45 }
+    //     };
 
-    if (!fromElement || !toElement) return conn;
+    if (!fromElement || !toElement) return conn; // Sin cambio si no existe
+    console.log("From Element:", fromElement);
 
     const fromRect = fromElement.getBoundingClientRect();
+    //const toRect = toElement.getBoundingClientRect();
 
-    // Ajustar por escala
-    const x1 = (fromRect.left + fromRect.width / 2 - workspaceRect.left) / SCALE.value;
-    const y1 = (fromRect.top + fromRect.height / 2 - workspaceRect.top) / SCALE.value;
+    // Convertir a coordenadas relativas al workspace
+    const x1 = fromRect.left + fromRect.width / 2 - workspaceRect.left;
+    const y1 = fromRect.top + fromRect.height / 2 - workspaceRect.top;
 
     const ledValues = ledRefs.value[0]?.getPinCoords();
-    const x2 = ((side === 'left' ? ledValues.left.x : ledValues.right.x) - workspaceRect.left) / SCALE.value;
-    const y2 = ((side === 'left' ? ledValues.left.y : ledValues.right.y) - workspaceRect.top) / SCALE.value;
+    const x2 = (side === 'left' ? ledValues.left.x : ledValues.right.x) - workspaceRect.left;
+    const y2 = (side === 'left' ? ledValues.left.y : ledValues.right.y) - workspaceRect.top;
+
+    //const ledPinPos = getLedPinPos(side as 'left' | 'right', positions.value.find(item => item.id === id)?.flipped || false, positions.value.find(item => item.id === id)?.rotation || 0);
+
+    // const x2 = toRect.left + toRect.width - ledPinPos.x / 2 - workspaceRect.left ;
+    // const y2 = toRect.top + toRect.height - ledPinPos.y / 2 - workspaceRect.top ;
 
     return {
       ...conn,
@@ -162,11 +206,9 @@ function updateConnectionsPositions() {
 
 function handlePinClick(ledId, side) {
   console.log(`Pin ${side} clicked on LED with ID: ${ledId} and selected pin: ${selectedPin.value}`);
-  console.log(tempLine.value)
   if (!selectedPin.value || !tempLine.value) return;
 
   const { x1, y1, x2, y2 } = tempLine.value;
-  console.log("templine:")
 
   // Puntos de control: por defecto hacemos una curva vertical tipo "S"
   const dx = x2 - x1;
@@ -257,7 +299,7 @@ function setupPinListeners() {
   console.log(group);
   if (!group) return;
 
-  // Seleccionamos todos los hijos con id dentro del grupo GPIO
+  // Seleccionamos todos los hijos con id dentro del grupo GPIO5
   const pins = group.querySelectorAll<SVGElement>('[id]');
   
   pins.forEach(el => {
