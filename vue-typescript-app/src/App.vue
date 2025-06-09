@@ -227,6 +227,7 @@ function handlePinClick(ledId, side) {
     cy1,
     cx2,
     cy2,
+
     fromPinId: selectedPin.value,
     toPinId: `${ledId}-${side}`
   });
@@ -356,7 +357,6 @@ const showMenu = ref(false);
 function setupMenu() {
   showMenu.value = !showMenu.value; 
 }
-
 
 function clearConnections() {
   connections.value = [];
