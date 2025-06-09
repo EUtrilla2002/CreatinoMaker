@@ -15,12 +15,15 @@ const hookMap = {
       //setLedState(value);
       console.log(connections);
       // Lógica de conexion: patita izq en el GND y patita drcha en un GPIO
-      const existsGPIO = connections.some(
-        (conn) => conn.pinName === GPIOpin && conn.ledPin === "right"
+      console.log(connections)
+      const gpioConnection = connections.find(
+        (conn) => conn.fromPinId === GPIOpin && conn.toPinId.endsWith("right")
       );
-      const existsGND = connections.some(
-        (conn) => conn.pinName.includes("GND") && conn.ledPin === "left"
+      const gndConnection = connections.find(
+        (conn) => conn.fromPinId.includes("GND") && conn.toPinId.endsWith("left")
       );
+      const existsGPIO = !!gpioConnection;
+      const existsGND = !!gndConnection;
       console.log(
         "Estado pin drcho",
         existsGPIO,
@@ -28,7 +31,27 @@ const hookMap = {
         existsGND
       );
       if (existsGPIO == true && existsGND == true) {
-        setLedState(value);
+        //setLedState(value);
+        const toPinId = gpioConnection.toPinId;
+        console.log("toPinId del LED:", toPinId);
+
+        const lastDashIndex = toPinId.lastIndexOf("-");
+        const ledId = toPinId.substring(0, lastDashIndex);
+
+        const toElement = document.getElementById(ledId);
+        console.log("Elemento LED:", toElement);
+
+        const wokwiLed = toElement.querySelector("wokwi-led");
+        console.log(wokwiLed.value); // ver valor actual
+        console.log(value)
+        wokwiLed.value = !!value; // fuerza a boolean
+
+
+        console.log(wokwiLed.value); // ver valor actual
+
+
+
+
       } else {
         console.log("Not connected");
       }
