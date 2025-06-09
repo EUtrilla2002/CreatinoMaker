@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive, watch, nextTick, onMounted, computed } from 'vue'
+import { ref, reactive, watch, nextTick, onMounted, computed , onBeforeUnmount} from 'vue'
 import BoardElement from './components/BoardElements/BoardElement.vue';
 import * as Emulator from "@aloeminium108/risc-v-emulator";
 const { Assembler, CPU } = Emulator.default;
@@ -23,6 +23,8 @@ const positions = ref<{ id: string, position: { x: number, y: number }, compStat
   }
 ]);
 const ledRefs = ref<Record<string, any>>({});
+//Deformar líneas
+
 // Dibujo de líneas
 const tempLine = ref<{ x1: number, y1: number, x2: number, y2: number } | null>(null);
 const connections = ref<Array<{
@@ -58,23 +60,16 @@ const offset = reactive({ x: 0, y: 0 })
 const svgRef = ref<SVGSVGElement | null>(null)
 const selectedPin = ref<string | null>(null)
 
-const SCALE = 2; // Usa el mismo valor que en el CSS
+const SCALE= ref(2); // empieza en 1x
 
 function handleMouseDown(e: MouseEvent, id: string) {
-  draggingId.value = id
+  draggingId.value = id;
   const element = positions.value.find(item => item.id === id);
-  
   if (!element) return;
 
-  if (draggingId.value?.startsWith("led-")) {
-    offset.x = (e.clientX - element.position.x * SCALE)
-    offset.y = (e.clientY - element.position.y * SCALE)
-  } else {
-    console.log("Elemento normal arrastrado:", draggingId.value);
-  }
-  
-  offset.x = (e.clientX - element.position.x * SCALE)
-  offset.y = (e.clientY - element.position.y * SCALE)
+  // Calcula offset relativo a la posición actual del elemento y ajusta por la escala
+  offset.x = (e.clientX / SCALE.value) - element.position.x;
+  offset.y = (e.clientY / SCALE.value) - element.position.y;
 }
 
 function handleFlip(id: string) {
@@ -88,40 +83,16 @@ function handleRotate(id: string) {
 }
 
 function handleMouseMove(e: MouseEvent) {
-  if (!draggingId.value && selectedPin.value) {
-    const workspaceRect = workspaceRef.value?.getBoundingClientRect();
-    if (!workspaceRect) return;
-
-    // console.log("SVG Rect:", svgRect);
-
-    const safeId = CSS.escape(selectedPin.value);
-    const pinEl = svgRef.value?.svgEl.querySelector(`#${safeId}`);
-    if (!pinEl) return;
-    //console.log("Pin Element:", pinEl);
-
-    const pinRect = pinEl.getBoundingClientRect();
-
-    const x1 = (pinRect.left + pinRect.width / 2) - workspaceRect.left;
-    const y1 = (pinRect.top + pinRect.height / 2) - workspaceRect.top;
-
-    const x2 = e.clientX - workspaceRect.left;
-    const y2 = e.clientY - workspaceRect.top;
-
-    tempLine.value = { x1, y1, x2, y2 };
-  }
-
-  // Movimiento normal de componentes
   if (!draggingId.value) return;
 
   const element = positions.value.find(item => item.id === draggingId.value);
   if (element) {
-    element.position.x = (e.clientX - offset.x) / SCALE;
-    element.position.y = (e.clientY - offset.y) / SCALE;
+    // La posición se calcula dividiendo clientX/clientY por escala y restando el offset
+    element.position.x = (e.clientX / SCALE.value) - offset.x;
+    element.position.y = (e.clientY / SCALE.value) - offset.y;
     updateConnectionsPositions();
   }
-  console.log("Temp Line:", tempLine.value);
 }
-
 function handleAddGadget(type: string) {
   if (type === 'LED') {
     const id = `led-${Date.now()}-${Math.random()}`;
@@ -155,52 +126,31 @@ function removeLed(id: string) {
 function updateConnectionsPositions() {
   const workspaceRect = workspaceRef.value?.getBoundingClientRect();
   if (!workspaceRect) return;
-  console.log("Workspace Rect:", workspaceRect);
 
   connections.value = connections.value.map(conn => {
-    // Obtener el pin origen
-    console.log("Updating connection:", conn);
-    console.log("From Pin ID:", conn.fromPinId);
     const svg = svgRef.value.svgEl;
-    if (!svg) return;
-    //console.log("SVG Element:", svg);
+    if (!svg) return conn;
     const group = svg.querySelector<SVGElement>('#g147');
-    console.log(group);
-    if (!group) return;
+    if (!group) return conn;
+
     const pins = group.querySelectorAll<SVGElement>('[id]');
     const fromElement = Array.from(pins).find(el => el.id === conn.fromPinId) as SVGElement | undefined;
-    //console.log("From Element:", fromElement);
-    //const fromElement = document.getElementById(conn.fromPinId);
-    // Obtener el pin destino
-    console.log("To Pin ID:", conn.toPinId);
     const lastDashIndex = conn.toPinId.lastIndexOf('-');
-    const id = conn.toPinId.substring(0, lastDashIndex);  // "led-1748428485105-0.20556167771505063"
-    const side = conn.toPinId.substring(lastDashIndex + 1); // "right"
+    const id = conn.toPinId.substring(0, lastDashIndex);
+    const side = conn.toPinId.substring(lastDashIndex + 1);
     const toElement = document.getElementById(id);
-    console.log("To Element:", toElement);
-    // const ledPinPos = {
-    //       left: { x: 105, y: 45 },
-    //       right: { x: 60, y: 45 }
-    //     };
 
-    if (!fromElement || !toElement) return conn; // Sin cambio si no existe
-    console.log("From Element:", fromElement);
+    if (!fromElement || !toElement) return conn;
 
     const fromRect = fromElement.getBoundingClientRect();
-    //const toRect = toElement.getBoundingClientRect();
 
-    // Convertir a coordenadas relativas al workspace
-    const x1 = fromRect.left + fromRect.width / 2 - workspaceRect.left;
-    const y1 = fromRect.top + fromRect.height / 2 - workspaceRect.top;
+    // Ajustar por escala
+    const x1 = (fromRect.left + fromRect.width / 2 - workspaceRect.left) / SCALE.value;
+    const y1 = (fromRect.top + fromRect.height / 2 - workspaceRect.top) / SCALE.value;
 
     const ledValues = ledRefs.value[0]?.getPinCoords();
-    const x2 = (side === 'left' ? ledValues.left.x : ledValues.right.x) - workspaceRect.left;
-    const y2 = (side === 'left' ? ledValues.left.y : ledValues.right.y) - workspaceRect.top;
-
-    //const ledPinPos = getLedPinPos(side as 'left' | 'right', positions.value.find(item => item.id === id)?.flipped || false, positions.value.find(item => item.id === id)?.rotation || 0);
-
-    // const x2 = toRect.left + toRect.width - ledPinPos.x / 2 - workspaceRect.left ;
-    // const y2 = toRect.top + toRect.height - ledPinPos.y / 2 - workspaceRect.top ;
+    const x2 = ((side === 'left' ? ledValues.left.x : ledValues.right.x) - workspaceRect.left) / SCALE.value;
+    const y2 = ((side === 'left' ? ledValues.left.y : ledValues.right.y) - workspaceRect.top) / SCALE.value;
 
     return {
       ...conn,
@@ -212,9 +162,11 @@ function updateConnectionsPositions() {
 
 function handlePinClick(ledId, side) {
   console.log(`Pin ${side} clicked on LED with ID: ${ledId} and selected pin: ${selectedPin.value}`);
+  console.log(tempLine.value)
   if (!selectedPin.value || !tempLine.value) return;
 
   const { x1, y1, x2, y2 } = tempLine.value;
+  console.log("templine:")
 
   // Puntos de control: por defecto hacemos una curva vertical tipo "S"
   const dx = x2 - x1;
@@ -305,7 +257,7 @@ function setupPinListeners() {
   console.log(group);
   if (!group) return;
 
-  // Seleccionamos todos los hijos con id dentro del grupo GPIO5
+  // Seleccionamos todos los hijos con id dentro del grupo GPIO
   const pins = group.querySelectorAll<SVGElement>('[id]');
   
   pins.forEach(el => {
@@ -380,6 +332,16 @@ function clearConnections() {
   }
   selectedPin.value = null;
 }
+function zoomIn() {
+  SCALE.value += 0.5;
+  if (SCALE.value > 5) SCALE.value = 5; // Limitar a 2x
+  updateConnectionsPositions();
+}
+function zoomOut() {
+  SCALE.value -= 0.5;
+  if (SCALE.value < 1) SCALE.value = 1; // Limitar a 2x
+  updateConnectionsPositions();
+}
 </script>
 
 <template>
@@ -389,6 +351,15 @@ function clearConnections() {
     <Menu v-if="showMenu" style="position: absolute; bottom:270px; right: 510px; z-index: 1200;" @add-gadget="handleAddGadget" />
 
     <div ref="workspaceRef" style="width: 90%; height: 70%; border: 2px solid #ccc; position: relative; margin-bottom: 1rem; overflow: hidden;">
+      <div style="position: absolute; top: 20px; left: 20px; z-index: 1100; display: flex; flex-direction: column;">
+        <button @click="zoomIn" style="font-size: 2rem; padding: 0.75rem 1.5rem; margin-bottom: 0.5rem;" id="menu-btn">
+          <fa-icon :icon="['fas', 'magnifying-glass-plus']" style="width: 1em; height: 1em; color: white;" />
+        </button>
+        <button @click="zoomOut" style="font-size: 2rem; padding: 0.75rem 1.5rem;" id="menu-btn">
+          <fa-icon :icon="['fas', 'magnifying-glass-minus']" style="width: 1em; height: 1em; color: white;" />
+        </button>
+      </div>
+
       <div style="position: absolute; bottom: 20px; right: 20px; z-index: 1100;">
         <div style="position: relative; display: inline-block;">
           <button @click="setupMenu" id="plus-btn" style="font-size: 2rem; padding: 0.75rem 1.5rem; margin-right: 0.5rem;">+</button>
@@ -398,7 +369,13 @@ function clearConnections() {
 
         </div>
       </div>
-      <div style="transform: scale(2); transform-origin: top left; display: inline-block;">
+      <div 
+        :style="{ 
+          transform: `scale(${SCALE})`, 
+          transformOrigin: 'top left', 
+          display: 'inline-block' 
+        }"
+      >
         <BoardElement
           :positions="positions"
           @handleMouseDown="handleMouseDown"
