@@ -1,42 +1,92 @@
 <template>
   <div
     class="led-component"
-    :style="{ left: position.x + 'px', top: position.y + 'px' }"
+    :id="id"
+    :style="{ left: position.x + 'px', top: position.y + 'px'}"
     @mousedown="handleMouseDown"
+    
     ref="ledRef"
   >
-    <wokwi-led color="red" :value="ledState ? false : ''"></wokwi-led>
-    <svg
-      width="50"
-      height="50"
-      style="position: absolute; top: 0; left: 0; pointer-events: none;"
-    >
-      <!-- Patita izquierda -->
-      <rect
-        x="12"
-        y="40"
-        width="5"
-        height="5"
-        fill="rgba(255, 0, 0, 0.3)"
-        style="cursor: pointer; pointer-events: auto;"
-        @click.stop="handlePinClick('left')"
-      />
-      <!-- Patita derecha -->
-      <rect
-        x="22"
-        y="40"
-        width="5"
-        height="5"
-        fill="rgba(255, 0, 0, 0.3)"
-        style="cursor: pointer; pointer-events: auto;"
-        @click.stop="handlePinClick('right')"
-      />
-    </svg>
+    <div :style="{ transform: `${flipped ? 'scaleX(-1)' : ''} rotate(${rotation}deg)` }">
+        <wokwi-led :color="ledColor" :value="ledState ? false : '' "></wokwi-led>
+        <svg
+          width="50"
+          height="50"
+          style="position: absolute; top: 0; left: 0; pointer-events: none;"
+        >
+         <!-- Patita izquierda -->
+          <rect
+            x="12"
+            y="40"
+            width="5"
+            height="5"
+            fill="rgba(255, 0, 0, 0.3)"
+            style="cursor: pointer; pointer-events: auto;"
+            @click.stop="handlePinClick('left')"
+            ref="leftPinRef"
+          />
+          <!-- Patita derecha -->
+          <rect
+            x="22"
+            y="40"
+            width="5"
+            height="5"
+            fill="rgba(255, 0, 0, 0.3)"
+            style="cursor: pointer; pointer-events: auto;"
+            @click.stop="handlePinClick('right')"
+            ref="rightPinRef"
+          />
+          <!-- Botón Config -->
+        <circle
+            cx="40"
+            cy="10"
+            r="8"
+            fill="transparent"
+            style="cursor: pointer; pointer-events: auto;"
+            ref="configButtonRef"
+            @click="handleConfigClick"
+          />
+          <text
+            x="40"
+            y="14"
+            text-anchor="middle"
+            alignment-baseline="middle"
+            font-size="12"
+            fill="white"
+            style="pointer-events: none;"
+          >
+            ⚙️
+          </text>
+        </svg>
+      </div>
+    <ConfigMenu
+      v-if="showConfigMenu"
+      :style="{
+        position: 'absolute',
+        left: configMenuPosition.x + 'px',
+        top: configMenuPosition.y + 'px',
+        zIndex: 1000,
+      }"
+      @update:modelValue="ledColor = $event"ç
+      @flip="handleFlip"
+      @rotate="handleRotate"
+      @delete="emit('delete', id)"
+    />
   </div>
 </template>
 <script setup lang="ts">
-import { defineProps, defineEmits } from 'vue'
+import { defineProps, defineEmits, ref, defineExpose } from 'vue'
+import ConfigMenu from './ConfigMenu.vue'
 
+const showConfigMenu = ref(false)
+const configMenuPosition = ref({ x: 10, y: 10 })
+const configButtonRef = ref<SVGCircleElement | null>(null)
+const ledColor = ref('red') // color inicial
+
+const rotation = ref(0)
+const flipped = ref(false)
+const leftPinRef = ref<SVGRectElement | null>(null)
+const rightPinRef = ref<SVGRectElement | null>(null)
 // Props
 defineProps<{
   position: { x: number; y: number };
@@ -45,11 +95,31 @@ defineProps<{
   selectedPin: string | null;
   connections: Array<{ pinName: string; ledPin: 'left' | 'right' }> | [];
 }>();
+function getPinCoords() {
+  const left = leftPinRef.value?.getBoundingClientRect()
+  const right = rightPinRef.value?.getBoundingClientRect()
+  return {
+    left,
+    right
+  }
+}
+defineExpose({ getPinCoords })
 
 const emit = defineEmits<{
   (e: 'handleMouseDown', event: MouseEvent, id: string): void
   (e: 'handlePinClick', side: 'left' | 'right'): void
+  (e: 'update:modelValue', color: string): void 
+  (e: 'delete', id: string): void
+  (e: 'updateState', state: { flipped: boolean; rotation: number }): void
 }>()
+function handleFlip() {
+  flipped.value = !flipped.value
+  emit('updateState', { flipped: flipped.value, rotation: rotation.value })
+}
+function handleRotate() {
+  rotation.value = (rotation.value + 90) % 360
+  emit('updateState', { flipped: flipped.value, rotation: rotation.value })
+}
 
 function handleMouseDown(e: MouseEvent) {
   emit('handleMouseDown', e, 'led')
@@ -58,68 +128,24 @@ function handlePinClick(side: 'left' | 'right') {
   console.log(`Pin ${side} clicked`)
   emit('handlePinClick',side)
 }
+function handleConfigClick(event: MouseEvent) {
+  event.stopPropagation()
+  showConfigMenu.value = !showConfigMenu.value
+
+  if (showConfigMenu.value && configButtonRef.value) {
+    //TODO: ¿Movemos el menú según lo pida el alumno?
+    configMenuPosition.value = {
+      x: 50,
+      y: 0,     
+    }
+
+    console.log('Relative config menu position:', configMenuPosition.value)
+  }
+}
+
+
 </script>
-  
-  <!-- <script>
-  export default {
-    props: {
-      id: {
-        type: String,
-        required: true,
-      },
-      position: {
-        type: Object,
-        required: true,
-      },
-      handleMouseDown: {
-        type: Function,
-        required: true,
-      },
-      ledState: {
-        type: Boolean,
-        default: false,
-      },
-      selectedPin: {
-        type: String,
-        default: null,
-      },
-      setConnections: {
-        type: Function,
-        required: true,
-      },
-      setSelectedPin: {
-        type: Function,
-        required: true,
-      },
-    },
-    methods: {
-      handleClick(event) {
-        event.stopPropagation();
-        if (!this.selectedPin) {
-          this.setSelectedPin(this.id);
-        }
-      },
-      handlePinClick(side) {
-        if (this.selectedPin) {
-          this.setConnections((conns) => [
-            ...conns,
-            { pinName: this.selectedPin, ledPin: side },
-          ]);
-          this.setSelectedPin(null);
-        } else {
-          alert("Primero selecciona un pin en la placa");
-        }
-      },
-    },
-    mounted() {
-      this.$el.addEventListener('click', this.handleClick);
-    },
-    beforeDestroy() {
-      this.$el.removeEventListener('click', this.handleClick);
-    },
-  };
-  </script> -->
-  
+
   <style scoped>
   .led-component {
     position: absolute;
