@@ -10,7 +10,7 @@
     />
     
     <!-- Puntos de control -->
-    <circle
+    <!-- <circle
       v-for="(line, index) in lines"
       :key="'cx1-' + index"
       :cx="line.cx1"
@@ -27,7 +27,7 @@
       r="6"
       fill="blue"
       @mousedown="startDragControlPoint(index, 'cx2', 'cy2', $event)"
-    />
+    /> -->
 
     <line
       v-if="tempLine"

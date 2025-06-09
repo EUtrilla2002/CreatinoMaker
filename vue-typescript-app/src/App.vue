@@ -458,6 +458,9 @@ function zoomOut() {
 
     <!-- <textarea v-model="asmCode" readonly style="width: 100%;" rows="10"></textarea> -->
   </div>
+  <div id="overlay-container"
+     style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2000;">
+  </div>
 </template>
 
 <style scoped>

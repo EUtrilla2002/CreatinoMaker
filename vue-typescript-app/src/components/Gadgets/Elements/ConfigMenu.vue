@@ -1,5 +1,5 @@
 <template>
-  <div class="w-80 bg-gray-900 text-white rounded shadow-lg p-4 relative">
+  <div ref="menuRef" class="w-80 bg-gray-900 text-white rounded shadow-lg p-4 relative" style="z-index: 1000;">
     <div v-for="category in filteredCategories" :key="category.name" class="mb-4">
       <div class="font-bold text-lg mb-1">{{ category.name }}</div>
       <div class="border-b border-gray-600 mb-2"></div>
@@ -24,6 +24,7 @@
       v-if="selectedItem === 'Color'"
       :modelValue="selectedColor"
       :position="popupPosition"
+      :width="menuWidth"
       @update:modelValue="onColorChange"
       @close="selectedItem = null"
     />
@@ -31,8 +32,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, nextTick } from 'vue'
+import { ref, computed, nextTick ,onMounted, } from 'vue'
 import ColorPickerPopup from './ColorPickerPopup.vue'
+const menuRef = ref<HTMLElement | null>(null)
+const menuWidth = ref(0)
 
 const selectedItem = ref<string | null>(null)
 const selectedColor = ref('#000000')
@@ -91,6 +94,16 @@ const onColorChange = (color: string) => {
   selectedColor.value = color
   emit('update:modelValue', color) // <--- propaga el evento hacia LED.vue
 }
+
+onMounted(() => {
+  nextTick(() => {
+    if (menuRef.value) {
+      const rect = menuRef.value.getBoundingClientRect()
+      menuWidth.value = rect.width
+      popupPosition.value = { x: rect.left, y: rect.bottom }
+    }
+  })
+})
 </script>
 
 
@@ -103,6 +116,7 @@ const onColorChange = (color: string) => {
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
   padding: 1rem;
   font-size: 0.8rem;
+  z-index: 1000000;
 }
 
 .bg-gray-900 {

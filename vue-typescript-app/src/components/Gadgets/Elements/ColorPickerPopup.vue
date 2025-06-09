@@ -6,7 +6,7 @@
     <!-- Popup anclado -->
     <div
       class="color-popup"
-      :style="{ top: position.y + 'px', left: position.x + 'px' }"
+      :style="{ top: position.y + 'px', left: position.x + 'px',  width: width + 'px'  }"
     >
       <div class="popup-arrow"></div>
 
@@ -20,6 +20,10 @@
             :disableAlpha="false"
             :showHistory="true"
             class="colorpicker"
+            :style="{
+              transform: 'scale(2)',
+              transformOrigin: 'top left'
+            }"
             inline
           />
         </div>
@@ -52,6 +56,7 @@ import 'vue3-colorpicker/style.css'
 const props = defineProps<{
   modelValue: string
   position: { x: number; y: number }
+  width: number
 }>()
 
 const emit = defineEmits(['update:modelValue', 'close'])
@@ -94,8 +99,8 @@ const color = computed({
   border: 1px solid #555;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
   padding: 1.5rem;
-  min-width: 300px;
-  max-width: 360px;
+  width: 100%;         /* 🔹 Usa todo el ancho disponible */
+  box-sizing: border-box;
 }
 
 .colorpicker {
