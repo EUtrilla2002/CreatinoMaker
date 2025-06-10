@@ -28,6 +28,7 @@ const ledRefs = ref<Record<string, any>>({});
 // Dibujo de líneas
 const tempLine = ref<{ x1: number, y1: number, x2: number, y2: number } | null>(null);
 const connections = ref<Array<{
+  id: string,
   x1: number,
   y1: number,
   x2: number,
@@ -145,6 +146,11 @@ function removeLed(id: string) {
   !conn.fromPinId.startsWith(id) && !conn.toPinId.startsWith(id)
 )
 }
+function removeLine(id) {
+  console.log("Removing line with ID:", id);
+  connections.value = connections.value.filter(conn => conn.id !== id
+)
+}
 
 function updateConnectionsPositions() {
   const workspaceRect = workspaceRef.value?.getBoundingClientRect();
@@ -163,8 +169,6 @@ function updateConnectionsPositions() {
     if (!group) return;
     const pins = group.querySelectorAll<SVGElement>('[id]');
     const fromElement = Array.from(pins).find(el => el.id === conn.fromPinId) as SVGElement | undefined;
-    //console.log("From Element:", fromElement);
-    //const fromElement = document.getElementById(conn.fromPinId);
     // Obtener el pin destino
     console.log("To Pin ID:", conn.toPinId);
     const lastDashIndex = conn.toPinId.lastIndexOf('-');
@@ -172,10 +176,6 @@ function updateConnectionsPositions() {
     const side = conn.toPinId.substring(lastDashIndex + 1); // "right"
     const toElement = document.getElementById(id);
     console.log("To Element:", toElement);
-    // const ledPinPos = {
-    //       left: { x: 105, y: 45 },
-    //       right: { x: 60, y: 45 }
-    //     };
 
     if (!fromElement || !toElement) return conn; // Sin cambio si no existe
     console.log("From Element:", fromElement);
@@ -219,6 +219,7 @@ function handlePinClick(ledId, side) {
   const cy2 = y2;
 
   connections.value.push({
+    id: `${ledId}-${side}-${selectedPin.value}`,
     x1,
     y1,
     x2,
@@ -452,6 +453,7 @@ function zoomOut() {
         :workspaceRef="workspaceRef"
         :tempLine="tempLine"
         :lines="lines"
+        @delete="removeLine"
     />
 
     </div>
