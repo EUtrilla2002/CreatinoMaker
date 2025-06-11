@@ -20,7 +20,9 @@
       :key="line.id || index"
       :d="generateCurvePath(line)"
       :stroke="selectedLineIndex === index ? 'blue' : (line.stroke || lineColor)"
-      stroke-width="selectedLineIndex === index ? 3 : 2"
+      :stroke-width="line.strokeWidth || 2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
       fill="none"
     />
 

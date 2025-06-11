@@ -205,7 +205,7 @@ function updateConnectionsPositions() {
     x2,
     y2,
     stroke: conn.stroke,           // <- conservamos color
-    strokeWidth: conn.strokeWidth  // <- conservamos grosor
+    strokeWidth: 2 * SCALE.value
     };
   });
 }
@@ -240,7 +240,7 @@ function handlePinClick(ledId, side) {
     toPinId: `${ledId}-${side}`,
 
     stroke: 'black',
-    strokeWidth: 2,
+    strokeWidth: 2 * SCALE.value,
 
 
   });
@@ -260,7 +260,7 @@ const lines = computed(() => {
     cx2: conn.cx2,
     cy2: conn.cy2,
     stroke: conn.stroke,           // <-- añadir esto
-    strokeWidth: conn.strokeWidth  // <-- y esto también
+    strokeWidth: 2 * SCALE.value
   }));
 });
 
