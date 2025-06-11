@@ -8,6 +8,7 @@
       <div class="font-bold text-md mb-1">{{ category.name }}</div>
       <div class="border-b border-gray-600 mb-2"></div>
       <div class="flex flex-row flex-wrap gap-1">
+        <button class="close-button" @click="$emit('close')">✖️</button>
         <button
           v-for="item in category.items"
           :key="item.label"
@@ -176,4 +177,24 @@ button:hover {
 .w-60 {
   width: 15rem;
 }
+.close-button {
+  position: absolute;
+  top: 5px;
+  right: 2px;
+  background: transparent;
+  border: none;
+  font-size: 12px;       /* Más pequeño */
+  padding: 0 4px;         /* Un poco de margen horizontal */
+  line-height: 1;
+  cursor: pointer;
+  color: #aaa;            /* Color más suave */
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+}
+
+.close-button:hover {
+  opacity: 1;
+  color: #555;
+}
+
 </style>

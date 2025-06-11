@@ -54,6 +54,7 @@
     :editingLineId="selectedLineId"
     @update:lineValue="updateLineProperty('stroke', $event)"
     @delete="deleteLine"
+    @close="closeConfigMenu"
   />
 </template>
 
@@ -78,6 +79,12 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['update:modelValue', 'delete', 'update:lineValue'])
+function closeConfigMenu() {
+  selectedLineIndex.value = null
+  selectedLineId.value = null
+  showColorPicker.value = false
+}
+
 
 const hoveredLineIndex = ref<number | null>(null)
 const selectedLineIndex = ref<number | null>(null)
