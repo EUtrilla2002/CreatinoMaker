@@ -42,21 +42,18 @@ function handleAddGadget(label) {
     case 'LED':
       emit('add-gadget', 'LED')
       break;
-    case 'Pushbutton':
+    case 'Button':
       emit('add-gadget', 'Pushbutton')
       break;
-    case 'Pushbutton 6mm':
-      emit('add-gadget', 'Pushbutton 6mm')
+    case 'Servo':
+      emit('add-gadget', 'Servo')
       break;
-    case 'Resistor':
-      emit('add-gadget', 'Resistor')
-      break;
-    case 'RGB LED':
-      emit('add-gadget', 'RGB LED')
-      break;
-    case 'SSD1306 OLED display':
-      emit('add-gadget', 'SSD1306 OLED display')
-      break;
+    // case 'RGB LED':
+    //   emit('add-gadget', 'RGB LED')
+    //   break;
+    // case 'SSD1306 OLED display':
+    //   emit('add-gadget', 'SSD1306 OLED display')
+    //   break;
   }
 }
 
@@ -68,18 +65,17 @@ const categories = ref([
     name: 'Basic',
     items: [
       { label: 'LED', icon: '/icons/led.svg'  },
-      { label: 'Pushbutton', icon: '/icons/pushbutton.png' },
-      { label: 'Pushbutton 6mm', icon: '/icons/pushbutton6mm.png' },
-      { label: 'Resistor', icon: '/icons/resistor.png' },
+      { label: 'Button', icon: '/icons/pushbutton.png' },
+      { label: 'Servo', icon: '/icons/pushbutton6mm.png' },
     ],
   },
-  {
-    name: 'Display',
-    items: [
-      { label: 'RGB LED', icon: '/icons/rgbled.png' },
-      { label: 'SSD1306 OLED display', icon: '/icons/oled.png' },
-    ],
-  },
+  // {
+  //   name: 'Display',
+  //   items: [
+  //     { label: 'RGB LED', icon: '/icons/rgbled.png' },
+  //     { label: 'SSD1306 OLED display', icon: '/icons/oled.png' },
+  //   ],
+  // },
 ])
 
 const filteredCategories = computed(() => {
@@ -93,14 +89,14 @@ const filteredCategories = computed(() => {
 <style scoped>
 .w-80 {
   width: 520px !important;
-  min-height: 600px;
+  max-height: 600px; /* altura máxima */
+  overflow-y: auto;  /* activa scroll vertical si sobrepasa */
   background: #2d2d2d !important;
   border-radius: 1rem;
   box-shadow: 0 4px 24px rgba(0,0,0,0.25);
   padding-bottom: 2.5rem;
   font-size: 1.25rem;
 }
-
 .bg-gray-900 {
   background: #2d2d2d !important;
 }

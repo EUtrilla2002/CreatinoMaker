@@ -38,7 +38,9 @@ const connections = ref<Array<{
   cx2: number,
   cy2: number,
   fromPinId: string,
-  toPinId: string
+  toPinId: string,
+  stroke: string,
+  strokeWidth: number
 }>>([]);
 
 
@@ -196,9 +198,14 @@ function updateConnectionsPositions() {
     // const x2 = toRect.left + toRect.width - ledPinPos.x / 2 - workspaceRect.left ;
     // const y2 = toRect.top + toRect.height - ledPinPos.y / 2 - workspaceRect.top ;
 
-    return {
-      ...conn,
-      x1, y1, x2, y2
+  return {
+    ...conn,
+    x1,
+    y1,
+    x2,
+    y2,
+    stroke: conn.stroke,           // <- conservamos color
+    strokeWidth: conn.strokeWidth  // <- conservamos grosor
     };
   });
 }
@@ -230,7 +237,12 @@ function handlePinClick(ledId, side) {
     cy2,
 
     fromPinId: selectedPin.value,
-    toPinId: `${ledId}-${side}`
+    toPinId: `${ledId}-${side}`,
+
+    stroke: 'black',
+    strokeWidth: 2,
+
+
   });
 
   tempLine.value = null;
@@ -247,9 +259,10 @@ const lines = computed(() => {
     cy1: conn.cy1,
     cx2: conn.cx2,
     cy2: conn.cy2,
+    stroke: conn.stroke,           // <-- añadir esto
+    strokeWidth: conn.strokeWidth  // <-- y esto también
   }));
 });
-
 
 
 function handleMouseUp() {
@@ -394,6 +407,7 @@ function zoomOut() {
     <Menu v-if="showMenu" style="position: absolute; bottom:270px; right: 510px; z-index: 1200;" @add-gadget="handleAddGadget" />
 
     <div ref="workspaceRef" style="width: 90%; height: 70%; border: 2px solid #ccc; position: relative; margin-bottom: 1rem; overflow: hidden;">
+      <!-- Elementos de zoom -->
       <div style="position: absolute; top: 20px; left: 20px; z-index: 1100; display: flex; flex-direction: column;">
         <button @click="zoomIn" style="font-size: 2rem; padding: 0.75rem 1.5rem; margin-bottom: 0.5rem;" id="menu-btn">
           <fa-icon :icon="['fas', 'magnifying-glass-plus']" style="width: 1em; height: 1em; color: white;" />
@@ -402,12 +416,22 @@ function zoomOut() {
           <fa-icon :icon="['fas', 'magnifying-glass-minus']" style="width: 1em; height: 1em; color: white;" />
         </button>
       </div>
+      <div style="position: absolute; top: 20px; right: 20px; z-index: 1100; display: flex; flex-direction: column;">
+        <button style="font-size: 2rem; padding: 0.75rem 1.5rem; margin-bottom: 0.5rem;" id="menu-btn">
+          <fa-icon :icon="['fas', 'bars']" style="width: 1em; height: 1em; color: white;" />
+        </button>
+      </div>
 
       <div style="position: absolute; bottom: 20px; right: 20px; z-index: 1100;">
+        <!-- Botones del fondo -->
         <div style="position: relative; display: inline-block;">
           <button @click="setupMenu" id="plus-btn" style="font-size: 2rem; padding: 0.75rem 1.5rem; margin-right: 0.5rem;">+</button>
-          <button @click="runProgram" style="font-size: 1.5rem; padding: 0.75rem 1.5rem; margin-right: 0.5rem;">Run</button>
-          <button @click="clearConnections" style="font-size: 1.5rem; padding: 0.75rem 1.5rem;">Clear</button>
+          <button @click="runProgram" style="font-size: 1.5rem; padding: 0.75rem 1.5rem; margin-right: 0.5rem;">
+            <fa-icon :icon="['fas', 'play']" style="width: 1em; height: 1em; color: white;" />
+          </button>
+          <button @click="clearConnections" style="font-size: 1.5rem; padding: 0.75rem 1.5rem;">
+            <fa-icon :icon="['fas', 'trash']" style="width: 1em; height: 1em; color: white;" />
+          </button>
           <!-- <button @click="handleAddGadget('LED')" style="position: absolute; top: -80px; left: 10px;">Añadir LED</button> -->
 
         </div>
@@ -454,6 +478,21 @@ function zoomOut() {
         :tempLine="tempLine"
         :lines="lines"
         @delete="removeLine"
+        @update:lineValue="changelineValue => {
+          console.log('Update line value:', changelineValue);
+
+          // Aquí puedes manejar el cambio de valor de la línea
+          connections = connections.map(conn => {
+            if (conn.id === changelineValue.id) {
+              console.log('Updating connection stroke:', conn.id, changelineValue.value);
+              return { ...conn, stroke: changelineValue.value };
+            }
+            console.log('Unchanged connection:', conn);
+            return conn;
+          });
+
+          console.log('Updated connections:', connections);
+        }"
     />
 
     </div>

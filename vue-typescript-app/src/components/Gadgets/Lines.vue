@@ -19,7 +19,7 @@
       v-for="(line, index) in lines"
       :key="line.id || index"
       :d="generateCurvePath(line)"
-      :stroke="selectedLineIndex === index ? 'blue' : (line.stroke || 'black')"
+      :stroke="selectedLineIndex === index ? 'blue' : (line.stroke || lineColor)"
       stroke-width="selectedLineIndex === index ? 3 : 2"
       fill="none"
     />
@@ -52,7 +52,7 @@
     v-if="selectedLineIndex !== null"
     :style="parseStyle(getMenuStyle(lines[selectedLineIndex]))"
     :editingLineId="selectedLineId"
-    @update:modelValue="changeLineColor"
+    @update:lineValue="updateLineProperty('stroke', $event)"
     @delete="deleteLine"
   />
 </template>
@@ -60,7 +60,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import ConfigMenu from './Elements/ConfigLines.vue'
-
+const lineColor = ref('black') // color inicial
 const props = defineProps({
   lines: {
     type: Array,
@@ -77,7 +77,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['update:modelValue', 'delete'])
+const emit = defineEmits(['update:modelValue', 'delete', 'update:lineValue'])
 
 const hoveredLineIndex = ref<number | null>(null)
 const selectedLineIndex = ref<number | null>(null)
@@ -101,15 +101,21 @@ function selectLine(index: number) {
     showColorPicker.value = false
   }
 }
-
-function changeLineColor(color: string) {
-  if (selectedLineIndex.value !== null) {
-    emit('update:modelValue', {
-      index: selectedLineIndex.value,
-      color
+function updateLineProperty(prop: 'stroke' | 'strokeWidth', value: string | number) {
+  const index = selectedLineIndex.value
+  //console.log('Updating line property:', prop, 'with value:', value, 'at index:', index)
+  console.log('Lines:', props.connections)
+  if (index !== null && props.lines[index]) {
+    (props.lines[index] as any)[prop] = value
+    //console.log('Lines:', props.connections[index].id)
+    emit('update:lineValue', {
+      id: props.connections[index].id,
+      property: prop,
+      value
     })
   }
 }
+
 
 function deleteLine() {
   if (selectedLineIndex.value !== null && selectedLineId.value) {
@@ -122,7 +128,7 @@ function deleteLine() {
 
 // Funciones de utilidad (mantenidas igual)
 function handleClickOutside(event: MouseEvent) {
-  if (!svgRef.value?.contains(event.target as Node)) {
+  if (!svgRef.value?.contains(event.target as Node) && selectedLineIndex.value == null) {
     selectedLineIndex.value = null
     selectedLineId.value = null
     showColorPicker.value = false

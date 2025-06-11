@@ -6,39 +6,34 @@
     <!-- Popup anclado -->
     <div
       class="color-popup"
-      :style="{ top: position.y + 'px', left: position.x + 'px',  width: width + 'px'  }"
+      :style="{ top: position.y + 'px', left: position.x + 'px', width: width + 'px' }"
     >
       <div class="popup-arrow"></div>
 
       <div class="popup-content">
-        <!-- Color Picker -->
-        <div class="picker-wrapper">
-          <ColorPicker
-            v-model:pureColor="color"
-            format="hex"
-            pickerType="chrome"
-            :disableAlpha="false"
-            :showHistory="true"
-            class="colorpicker"
-            :style="{
-              transform: 'scale(2)',
-              transformOrigin: 'top left'
-            }"
-            inline
-          />
+        <!-- Paleta de colores -->
+        <div class="color-grid">
+          <button
+            v-for="preset in presets"
+            :key="preset"
+            :style="{ backgroundColor: preset }"
+            class="color-btn"
+            @click="color = preset"
+          ></button>
         </div>
 
-        <div class="mt-3 text-white text-sm">
+        <!-- <div class="mt-3 text-white text-sm">
           Color seleccionado: <span :style="{ color }">{{ color }}</span>
-        </div>
+        </div> -->
+<!-- 
         <button
           class="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 transition"
           @click="$emit('update:modelValue', color)"
         >
           Aplicar Color
-        </button>
+        </button> -->
         <button
-          class="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-500 transition"
+          class="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-500 transition"
           @click="$emit('close')"
         >
           Cerrar
@@ -49,9 +44,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed ,onMounted} from 'vue'
-import { ColorPicker } from 'vue3-colorpicker'
-import 'vue3-colorpicker/style.css'
+import { computed, ref } from 'vue'
 
 const props = defineProps<{
   modelValue: string
@@ -59,20 +52,14 @@ const props = defineProps<{
   width: number
 }>()
 
-const emit = defineEmits(['update:modelValue', 'close'])
+const emit = defineEmits(['update:lineValue', 'close'])
+
+const presets = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00']
 
 const color = computed({
   get: () => props.modelValue,
-  set: value => {
-    console.log('ColorPicker color cambiado:', value)  // <--- aquí logueas el cambio
-    emit('update:modelValue', value)
-  },
+  set: value => emit('update:lineValue', value),
 })
-
-
-// onMounted(() => {
-//   console.log('ColorPickerPopup montado y visible, posición:', props.position)
-// })
 </script>
 
 <style scoped>
@@ -88,10 +75,8 @@ const color = computed({
   position: fixed;
   z-index: 50;
   transform: translateY(10px);
-  border: 2px solid red;
   background-color: rgba(255, 255, 255, 0.1);
 }
-
 
 .popup-arrow {
   position: absolute;
@@ -110,15 +95,27 @@ const color = computed({
   border: 1px solid #555;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
   padding: 1.5rem;
-  width: 100%;         /* 🔹 Usa todo el ancho disponible */
+  width: 100%;
   box-sizing: border-box;
 }
 
-.colorpicker {
-  width: 100%;
+.color-grid {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  justify-content: center;
 }
 
-.picker-wrapper {
-  overflow: visible;
+.color-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 0.5rem;
+  border: 2px solid #888;
+  cursor: pointer;
+  transition: border 0.2s;
+}
+
+.color-btn:hover {
+  border-color: white;
 }
 </style>
