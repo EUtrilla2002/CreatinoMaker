@@ -24,7 +24,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 
-const emit = defineEmits(['add-gadget']);
+const emit = defineEmits(['file-action']);
 
 
 function handleFile(label) {
@@ -33,11 +33,11 @@ function handleFile(label) {
     case 'Save':
       emit('file-action', 'save')
       break;
-    case 'Button':
-      emit('add-gadget', 'Pushbutton')
+    case 'Upload':
+      emit('file-action', 'upload')
       break;
     case 'Servo':
-      emit('add-gadget', 'Servo')
+      emit('file-action', 'Servo')
       break;
     // case 'RGB LED':
     //   emit('add-gadget', 'RGB LED')

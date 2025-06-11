@@ -11,6 +11,7 @@ import LEDComponent from './components/Gadgets/Elements/LED.vue';
 import FileMenu from './components/Gadgets/Elements/ConfigFile.vue';
 
 const workspaceRef = ref<HTMLDivElement | null>(null);
+const boardDataMutable = ref({ ...boardData });
 
 
 const compState = ref(true);
@@ -86,6 +87,10 @@ const draggingId = ref<string | null>(null)
 const offset = reactive({ x: 0, y: 0 })
 const svgRef = ref<SVGSVGElement | null>(null)
 const selectedPin = ref<string | null>(null)
+
+const showSave = ref(false);
+const showUpload = ref(false);
+const filename = ref('board-state');
 
 const SCALE= ref(2); // empieza en 1x
 
@@ -329,7 +334,7 @@ function setupPinListeners() {
   
   pins.forEach(el => {
     const pinId = el.id;
-    if ((boardData.pins as string[]).includes(pinId)) {
+    if ((boardDataMutable.value.pins as string[]).includes(pinId)) {
       // Cambiamos cursor para indicar que es clickeable
       (el as HTMLElement).style.cursor = "pointer";
 
@@ -367,7 +372,7 @@ onMounted(() => {
   });
 });
 
-watch(() => boardData.pins, () => {
+watch(() => boardDataMutable.pins, () => {
   nextTick(() => {
     setupPinListeners();
   });
@@ -393,31 +398,13 @@ function clearConnections() {
       const pins = group.querySelectorAll<SVGElement>('[id]');
       pins.forEach(el => {
         const pinId = el.id;
-        if ((boardData.pins as string[]).includes(pinId)) {
+        if ((boardDataMutable.pins as string[]).includes(pinId)) {
           el.setAttribute("fill", "#ffd700");
         }
       });
     }
   }
   selectedPin.value = null;
-}
-function downloadState() {
-  const state = {
-    positions: positions.value,
-    connections: connections.value,
-    boardData: boardData,
-    code : asmCode.value,
-  };
-  const json = JSON.stringify(state, null, 2);
-  const blob = new Blob([json], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'board-state.json';
-  a.click();
-  
-  URL.revokeObjectURL(url);
 }
 function loadFromJSON(jsonData) {
   positions.value = jsonData.positions;
@@ -441,6 +428,85 @@ function zoomOut() {
   if (SCALE.value < 1) SCALE.value = 1; // Limitar a 2x
   updateConnectionsPositions();
 }
+
+// Pantalla archivos
+function onFileAction(action) {
+  if (action === 'save') {
+    console.log("Saving board state...");
+    showSave.value = true;
+  }
+  if (action === 'upload') {
+    console.log("Uploading board state...");
+    showUpload.value = true;
+  }
+}
+
+function confirmDownload() {
+  showSave.value = false;
+  downloadState();
+}
+
+function cancelDownload() {
+  showSave.value = false;
+}
+
+function downloadState() {
+  const state = {
+    positions: positions.value,
+    connections: connections.value,
+    boardDataMutable: boardDataMutable,
+    code: asmCode.value,
+  };
+  const json = JSON.stringify(state, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${filename.value || 'board-state'}.json`;
+  a.click();
+
+  URL.revokeObjectURL(url);
+}
+
+// Upload file 
+function handleFileUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    try {
+      const content = e.target.result;
+      const parsed = JSON.parse(content);
+
+      // Aquí puedes aplicar los datos al estado
+      console.log('Contenido del JSON:', parsed);
+
+      // Ejemplo: aplicar al estado (ajusta a tus variables reales)
+      positions.value = parsed.positions || [];
+      connections.value = parsed.connections || [];
+      boardDataMutable.value = parsed.boardData || {};
+      asmCode.value = parsed.code || '';
+
+      showSave.value = false;
+    } catch (err) {
+      console.error('Error al leer el archivo JSON:', err);
+      alert('Archivo JSON inválido');
+    }
+  };
+
+  reader.readAsText(file);
+}
+function confirmUpload() {
+  showUpload.value = false;
+}
+
+function cancelUpload() {
+  showUpload.value = false;
+}
+
+
 </script>
 
 <template>
@@ -448,7 +514,25 @@ function zoomOut() {
   <div class="App" @mousemove="handleMouseMove" @mouseup="handleMouseUp" style="width: 100vw; height: 100vh; position: relative; overflow: hidden;">
     <h1 style="text-align: center; margin-top: 1rem;">Creatino Maker</h1>
     <Menu v-if="showMenu" style="position: absolute; bottom:270px; right: 390px; z-index: 1200;" @add-gadget="handleAddGadget" />
-    <FileMenu v-if="showFile" style="position: absolute; top: 170px; right: 250px; z-index: 1000;" />
+    <FileMenu v-if="showFile" style="position: absolute; top: 170px; right: 250px; z-index: 1000;" @file-action="onFileAction" />
+    <!-- Pantalla save -->
+    <div v-if="showSave" class="modal-backdrop">
+      <div class="modal">
+        <h3>Introduce un nombre para el archivo:</h3>
+        <input v-model="filename" placeholder="board-state" />
+        <button @click="confirmDownload">Aceptar</button>
+        <button @click="cancelDownload">Cancelar</button>
+      </div>
+    </div>
+    <!-- Pantalla upload-->
+    <div v-if="showUpload" class="modal-backdrop">
+      <div class="modal">
+        <h3>Sube un archivo JSON para cargar el estado:</h3>
+        <input type="file" @change="handleFileUpload" accept=".json" />
+        <button @click="confirmUpload">Aceptar</button>
+        <button @click="cancelUpload">Cancelar</button>
+      </div>
+    </div>
 
     <div ref="workspaceRef" style="width: 90%; height: 70%; border: 2px solid #ccc; position: relative; margin-bottom: 1rem; overflow: hidden;">
       <!-- Elementos de zoom -->
@@ -563,5 +647,23 @@ function zoomOut() {
 }
 .logo.vue:hover {
   filter: drop-shadow(0 0 2em #42b883aa);
+}
+
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+.modal {
+  background: rgb(39, 35, 35);
+  padding: 20px;
+  border-radius: 8px;
 }
 </style>
