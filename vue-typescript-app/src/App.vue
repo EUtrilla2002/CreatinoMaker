@@ -8,6 +8,7 @@ import boardData from './components/BoardElements/esp32c3.json';
 import ConnectionsLines from './components/Gadgets/Lines.vue';
 import Menu from './components/Gadgets/GadgetMenu.vue';
 import LEDComponent from './components/Gadgets/Elements/LED.vue';
+import FileMenu from './components/Gadgets/Elements/ConfigFile.vue';
 
 const workspaceRef = ref<HTMLDivElement | null>(null);
 
@@ -44,6 +45,20 @@ const connections = ref<Array<{
 }>>([]);
 
 
+// const asmCode = ref([
+//       "addi a0, a0, 5",
+//       "addi a1, a1, 1",
+//       "jal ra, 0x100",
+//       "addi a0, a0, -5",
+//       "addi a0, a0, 1000",
+//       "jal ra, 0x104",
+//       "addi a0, a0, -1000",
+//       "addi a0, a0, 5",
+//       "addi a1, a1, -1",
+//       "addi a1, a1, 0",
+//       "jal ra, 0x100",
+//       "addi t1, t1, 2",
+//     ]);
 const asmCode = ref([
       "addi a0, a0, 5",
       "addi a1, a1, 1",
@@ -56,7 +71,16 @@ const asmCode = ref([
       "addi a1, a1, -1",
       "addi a1, a1, 0",
       "jal ra, 0x100",
-      "addi t1, t1, 2",
+      "addi a0, a0, 1",
+      "addi a1, a1, 1",
+      "jal ra, 0x100",      
+      "addi a0, a0, -6",
+      "addi a0, a0, 1000",
+      "jal ra, 0x104",
+      "addi a0, a0, -994",
+      "addi a0, a0, 6",
+      "addi a1, a1, 0",
+      "jal ra, 0x100", 
     ]);
 const draggingId = ref<string | null>(null)
 const offset = reactive({ x: 0, y: 0 })
@@ -157,58 +181,44 @@ function removeLine(id) {
 function updateConnectionsPositions() {
   const workspaceRect = workspaceRef.value?.getBoundingClientRect();
   if (!workspaceRect) return;
-  console.log("Workspace Rect:", workspaceRect);
 
   connections.value = connections.value.map(conn => {
-    // Obtener el pin origen
-    console.log("Updating connection:", conn);
-    console.log("From Pin ID:", conn.fromPinId);
-    const svg = svgRef.value.svgEl;
-    if (!svg) return;
-    //console.log("SVG Element:", svg);
-    const group = svg.querySelector<SVGElement>('#g147');
-    console.log(group);
-    if (!group) return;
-    const pins = group.querySelectorAll<SVGElement>('[id]');
-    const fromElement = Array.from(pins).find(el => el.id === conn.fromPinId) as SVGElement | undefined;
-    // Obtener el pin destino
-    console.log("To Pin ID:", conn.toPinId);
-    const lastDashIndex = conn.toPinId.lastIndexOf('-');
-    const id = conn.toPinId.substring(0, lastDashIndex);  // "led-1748428485105-0.20556167771505063"
-    const side = conn.toPinId.substring(lastDashIndex + 1); // "right"
-    const toElement = document.getElementById(id);
-    console.log("To Element:", toElement);
+    // Obtenemos el pin origen del SVG
+    const svg = svgRef.value?.svgEl;
+    if (!svg) return conn;
 
-    if (!fromElement || !toElement) return conn; // Sin cambio si no existe
-    console.log("From Element:", fromElement);
+    const group = svg.querySelector<SVGElement>('#g147');
+    if (!group) return conn;
+
+    const pins = group.querySelectorAll<SVGElement>('[id]');
+    const fromElement = Array.from(pins).find(el => el.id === conn.fromPinId);
+    if (!fromElement) return conn;
+
+    const toId = conn.toPinId.substring(0, conn.toPinId.lastIndexOf('-'));
+    const side = conn.toPinId.substring(conn.toPinId.lastIndexOf('-') + 1);
+
+    const toLedComponent = ledRefs.value[toId];
+    if (!toLedComponent) return conn;
 
     const fromRect = fromElement.getBoundingClientRect();
-    //const toRect = toElement.getBoundingClientRect();
-
-    // Convertir a coordenadas relativas al workspace
     const x1 = fromRect.left + fromRect.width / 2 - workspaceRect.left;
     const y1 = fromRect.top + fromRect.height / 2 - workspaceRect.top;
 
-    const ledValues = ledRefs.value[0]?.getPinCoords();
+    const ledValues = toLedComponent.getPinCoords();
     const x2 = (side === 'left' ? ledValues.left.x : ledValues.right.x) - workspaceRect.left;
     const y2 = (side === 'left' ? ledValues.left.y : ledValues.right.y) - workspaceRect.top;
 
-    //const ledPinPos = getLedPinPos(side as 'left' | 'right', positions.value.find(item => item.id === id)?.flipped || false, positions.value.find(item => item.id === id)?.rotation || 0);
-
-    // const x2 = toRect.left + toRect.width - ledPinPos.x / 2 - workspaceRect.left ;
-    // const y2 = toRect.top + toRect.height - ledPinPos.y / 2 - workspaceRect.top ;
-
-  return {
-    ...conn,
-    x1,
-    y1,
-    x2,
-    y2,
-    stroke: conn.stroke,           // <- conservamos color
-    strokeWidth: 2 * SCALE.value
+    return {
+      ...conn,
+      x1,
+      y1,
+      x2,
+      y2,
+      strokeWidth: 2 * SCALE.value
     };
   });
 }
+
 
 
 function handlePinClick(ledId, side) {
@@ -370,6 +380,9 @@ watch(positions, (newPositions) => {
 const showMenu = ref(false);
 function setupMenu() {
   showMenu.value = !showMenu.value; 
+}const showFile = ref(false);
+function setupFile() {
+  showFile.value = !showFile.value; 
 }
 
 function clearConnections() {
@@ -388,6 +401,36 @@ function clearConnections() {
   }
   selectedPin.value = null;
 }
+function downloadState() {
+  const state = {
+    positions: positions.value,
+    connections: connections.value,
+    boardData: boardData,
+    code : asmCode.value,
+  };
+  const json = JSON.stringify(state, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'board-state.json';
+  a.click();
+  
+  URL.revokeObjectURL(url);
+}
+function loadFromJSON(jsonData) {
+  positions.value = jsonData.positions;
+  connections.value = jsonData.connections;
+  asmCode.value = jsonData.asmCode;
+  SCALE.value = jsonData.scale;
+  nextTick(() => {
+    updateConnectionsPositions();
+    setupPinListeners();
+  });
+}
+
+
 function zoomIn() {
   SCALE.value += 0.5;
   if (SCALE.value > 5) SCALE.value = 5; // Limitar a 2x
@@ -404,7 +447,8 @@ function zoomOut() {
   
   <div class="App" @mousemove="handleMouseMove" @mouseup="handleMouseUp" style="width: 100vw; height: 100vh; position: relative; overflow: hidden;">
     <h1 style="text-align: center; margin-top: 1rem;">Creatino Maker</h1>
-    <Menu v-if="showMenu" style="position: absolute; bottom:270px; right: 510px; z-index: 1200;" @add-gadget="handleAddGadget" />
+    <Menu v-if="showMenu" style="position: absolute; bottom:270px; right: 390px; z-index: 1200;" @add-gadget="handleAddGadget" />
+    <FileMenu v-if="showFile" style="position: absolute; top: 170px; right: 250px; z-index: 1000;" />
 
     <div ref="workspaceRef" style="width: 90%; height: 70%; border: 2px solid #ccc; position: relative; margin-bottom: 1rem; overflow: hidden;">
       <!-- Elementos de zoom -->
@@ -417,7 +461,7 @@ function zoomOut() {
         </button>
       </div>
       <div style="position: absolute; top: 20px; right: 20px; z-index: 1100; display: flex; flex-direction: column;">
-        <button style="font-size: 2rem; padding: 0.75rem 1.5rem; margin-bottom: 0.5rem;" id="menu-btn">
+        <button @click="setupFile" style="font-size: 2rem; padding: 0.75rem 1.5rem; margin-bottom: 0.5rem;" id="menu-btn">
           <fa-icon :icon="['fas', 'bars']" style="width: 1em; height: 1em; color: white;" />
         </button>
       </div>
@@ -461,7 +505,10 @@ function zoomOut() {
           @flip="() => handleFlip(led.id)"
           @rotate="() => handleRotate(led.id)"
           @updateState="(state) => handleLedStateChange(led.id, state)"
-          ref="ledRefs"
+          :ref="el => {
+            if (el) ledRefs[led.id] = el;
+            else delete ledRefs[led.id];
+          }"
         />
       </div>
       <!-- <ConnectionsLines
