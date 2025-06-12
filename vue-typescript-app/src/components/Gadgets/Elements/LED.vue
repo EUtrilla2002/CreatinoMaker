@@ -89,12 +89,6 @@ const configMenuPosition = ref({ x: 10, y: 10 })
 const configButtonRef = ref<SVGCircleElement | null>(null)
 const ledRef = ref<HTMLElement | null>(null);
 
-
-
-const rotation = ref(0)
-const flipped = ref(false)
-const leftPinRef = ref<SVGRectElement | null>(null)
-const rightPinRef = ref<SVGRectElement | null>(null)
 // Props
 const props = defineProps<{
   position: { x: number; y: number };
@@ -103,9 +97,22 @@ const props = defineProps<{
   selectedPin: string | null;
   connections: Array<{ pinName: string; ledPin: 'left' | 'right' }> | [];
   ledColor: string; 
+  flipped : boolean;
+  rotation: number
 }>();
-const ledColor = ref(props.ledColor || 'red')
 
+const ledColor = ref(props.ledColor || 'red')
+const rotation = ref(props.rotation || 0)
+const flipped = ref(props.flipped || false)
+const leftPinRef = ref<SVGRectElement | null>(null)
+const rightPinRef = ref<SVGRectElement | null>(null)
+
+watch(() => props.rotation, (newStatus) => {
+  rotation.value = newStatus
+})
+watch(() => props.flipped, (newStatus) => {
+  flipped.value = newStatus
+})
 watch(() => props.ledColor, (newColor) => {
   ledColor.value = newColor
 })

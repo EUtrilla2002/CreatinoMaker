@@ -22,7 +22,7 @@ const positions = ref<{ id: string, position: { x: number, y: number }, compStat
     compState: true,
     flipped: false,
     rotation: 0,
-    color: 'black'
+    color: 'black',
   }
 ]);
 const ledRefs = ref<Record<string, any>>({});
@@ -589,6 +589,8 @@ function cancelUpload() {
           :ledState="led.compState"
           :selectedPin="selectedPin?.value"
           :ledColor="led.color"
+          :flipped="led.flipped"
+          :rotation="led.rotation"
           :connections="connections"
           @handleMouseDown="(e) => handleMouseDown(e, led.id)"
           @handlePinClick="(side) => handlePinClick(led.id, side)"
