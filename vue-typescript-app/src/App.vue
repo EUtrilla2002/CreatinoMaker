@@ -15,13 +15,14 @@ const boardDataMutable = ref({ ...boardData });
 
 
 const compState = ref(true);
-const positions = ref<{ id: string, position: { x: number, y: number }, compState: boolean ,   flipped: boolean,  rotation: number }[]>([
+const positions = ref<{ id: string, position: { x: number, y: number }, compState: boolean ,   flipped: boolean,  rotation: number, color : string }[]>([
   {
     id: 'board',
     position: { x: 300, y: 100 },
     compState: true,
     flipped: false,
-    rotation: 0
+    rotation: 0,
+    color: 'black'
   }
 ]);
 const ledRefs = ref<Record<string, any>>({});
@@ -108,6 +109,10 @@ function handleFlip(id: string) {
   const led = positions.value.find(item => item.id === id);
   if (led) led.flipped = !led.flipped;
 }
+function handleColor(id: string) {
+  const led = positions.value.find(item => item.id === id);
+  if (led) led.color = color;
+}
 
 function handleRotate(id: string) {
   const led = positions.value.find(item => item.id === id);
@@ -157,18 +162,21 @@ function handleAddGadget(type: string) {
       position: { x: 200 + positions.value.length * 40, y: 100 }, // Espaciado simple
       compState: true,
       flipped: false,
-      rotation: 0
+      rotation: 0,
+      color: 'red'
 
     });
     console.log(positions.value.length);
 
   }
 }
-function handleLedStateChange(id: string, state: { flipped: boolean; rotation: number }) {
+function handleLedStateChange(id: string, state: { flipped: boolean; rotation: number ,color: string}) {
   const led = positions.value.find(item => item.id === id);
   if (led) {
     led.flipped = state.flipped;
     led.rotation = state.rotation;
+    led.color = state.color;
+    console.log(`LED ${id} state updated:`, led);
   }
 }
 function removeLed(id: string) {
@@ -378,7 +386,7 @@ watch(() => boardDataMutable.pins, () => {
   });
 });
 watch(positions, (newPositions) => {
-  console.log('Positions changed:', newPositions);
+  //console.log('Positions changed:', newPositions);
   updateConnectionsPositions();
 }, { deep: true });
 
@@ -406,17 +414,6 @@ function clearConnections() {
   }
   selectedPin.value = null;
 }
-function loadFromJSON(jsonData) {
-  positions.value = jsonData.positions;
-  connections.value = jsonData.connections;
-  asmCode.value = jsonData.asmCode;
-  SCALE.value = jsonData.scale;
-  nextTick(() => {
-    updateConnectionsPositions();
-    setupPinListeners();
-  });
-}
-
 
 function zoomIn() {
   SCALE.value += 0.5;
@@ -477,27 +474,36 @@ function handleFileUpload(event) {
   const reader = new FileReader();
   reader.onload = function (e) {
     try {
-      const content = e.target.result;
+      const content = e.target.result as string;
       const parsed = JSON.parse(content);
 
-      // Aquí puedes aplicar los datos al estado
-      console.log('Contenido del JSON:', parsed);
+      // Reemplaza todo el array con uno nuevo (gatilla la reactividad en Vue)
+      positions.value = (parsed.positions || []).map(p => ({
+        id: p.id,
+        position: p.position,
+        compState: p.compState ?? true,
+        flipped: p.flipped ?? false,
+        rotation: p.rotation ?? 0,
+        color: p.color ?? 'red'
+      }));
+      console.log("Positions loaded:", positions.value);
 
-      // Ejemplo: aplicar al estado (ajusta a tus variables reales)
-      positions.value = parsed.positions || [];
       connections.value = parsed.connections || [];
       boardDataMutable.value = parsed.boardData || {};
-      asmCode.value = parsed.code || '';
+      asmCode.value = parsed.code || [];
+
+      nextTick(() => {
+        updateConnectionsPositions(); // Actualiza visualmente las líneas
+      });
 
       showSave.value = false;
     } catch (err) {
-      console.error('Error al leer el archivo JSON:', err);
-      alert('Archivo JSON inválido');
+      console.error('Error parsing uploaded JSON:', err);
     }
   };
-
   reader.readAsText(file);
 }
+
 function confirmUpload() {
   showUpload.value = false;
 }
@@ -582,6 +588,7 @@ function cancelUpload() {
           :position="led.position"
           :ledState="led.compState"
           :selectedPin="selectedPin?.value"
+          :ledColor="led.color"
           :connections="connections"
           @handleMouseDown="(e) => handleMouseDown(e, led.id)"
           @handlePinClick="(side) => handlePinClick(led.id, side)"

@@ -72,7 +72,7 @@
       pointerEvents: 'auto',
       transform: 'scale(1.5)'
     }"
-      @update:modelValue="ledColor = $event"
+      @update:modelValue="handleColor"
       @flip="handleFlip"
       @rotate="handleRotate"
       @delete="emit('delete', id)"
@@ -81,7 +81,7 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps, defineEmits, ref, defineExpose,nextTick} from 'vue'
+import { defineProps, defineEmits, ref, defineExpose,nextTick, watch} from 'vue'
 import ConfigMenu from './ConfigMenu.vue'
 
 const showConfigMenu = ref(false)
@@ -89,20 +89,27 @@ const configMenuPosition = ref({ x: 10, y: 10 })
 const configButtonRef = ref<SVGCircleElement | null>(null)
 const ledRef = ref<HTMLElement | null>(null);
 
-const ledColor = ref('red') // color inicial
+
 
 const rotation = ref(0)
 const flipped = ref(false)
 const leftPinRef = ref<SVGRectElement | null>(null)
 const rightPinRef = ref<SVGRectElement | null>(null)
 // Props
-defineProps<{
+const props = defineProps<{
   position: { x: number; y: number };
   ledState: boolean;
   id: string;
   selectedPin: string | null;
   connections: Array<{ pinName: string; ledPin: 'left' | 'right' }> | [];
+  ledColor: string; 
 }>();
+const ledColor = ref(props.ledColor || 'red')
+
+watch(() => props.ledColor, (newColor) => {
+  ledColor.value = newColor
+})
+
 function getPinCoords() {
   const left = leftPinRef.value?.getBoundingClientRect()
   const right = rightPinRef.value?.getBoundingClientRect()
@@ -118,15 +125,20 @@ const emit = defineEmits<{
   (e: 'handlePinClick', side: 'left' | 'right'): void
   (e: 'update:modelValue', color: string): void 
   (e: 'delete', id: string): void
-  (e: 'updateState', state: { flipped: boolean; rotation: number }): void
+  (e: 'updateState', state: { flipped: boolean; rotation: number, color: string }): void
 }>()
 function handleFlip() {
   flipped.value = !flipped.value
-  emit('updateState', { flipped: flipped.value, rotation: rotation.value })
+  emit('updateState', { flipped: flipped.value, rotation: rotation.value, color: ledColor.value })
+}
+function handleColor(color) {
+  ledColor.value = color
+  console.log('Color changed to:', ledColor.value)
+  emit('updateState', { flipped: flipped.value, rotation: rotation.value, color: ledColor.value  })
 }
 function handleRotate() {
   rotation.value = (rotation.value + 90) % 360
-  emit('updateState', { flipped: flipped.value, rotation: rotation.value })
+  emit('updateState', { flipped: flipped.value, rotation: rotation.value, color: ledColor.value  })
 }
 
 function handleMouseDown(e: MouseEvent) {
