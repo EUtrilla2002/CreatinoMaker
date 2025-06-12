@@ -132,7 +132,6 @@ function handleMouseDown(e: MouseEvent, id: string) {
 }
 
 function handleFlip(id: string) {
-  saveStateForUndo(); 
   const led = positions.value.find(item => item.id === id);
   if (led) led.flipped = !led.flipped;
 }
@@ -181,7 +180,6 @@ function handleMouseMove(e: MouseEvent) {
   }
 }
 function handleAddGadget(type: string) {
-  saveStateForUndo();
   if (type === 'LED') {
     const id = `led-${Date.now()}-${Math.random()}`;
     console.log("Adding LED with ID:", id);
@@ -208,7 +206,6 @@ function handleLedStateChange(id: string, state: { flipped: boolean; rotation: n
   }
 }
 function removeLed(id: string) {
-  saveStateForUndo();
   positions.value = positions.value.filter(item => item.id !== id)
   connections.value = connections.value.filter(conn =>
   !conn.fromPinId.startsWith(id) && !conn.toPinId.startsWith(id)
@@ -216,7 +213,6 @@ function removeLed(id: string) {
 
 }
 function removeLine(id) {
-  saveStateForUndo();
   console.log("Removing line with ID:", id);
   connections.value = connections.value.filter(conn => conn.id !== id
 )
@@ -320,7 +316,6 @@ const lines = computed(() => {
 
 
 function handleMouseUp() {
-  saveStateForUndo();
   draggingId.value = null;
   setTimeout(() => {
     tempLine.value = null;
@@ -412,7 +407,7 @@ onMounted(() => {
   });
 });
 
-watch(() => boardDataMutable.pins, () => {
+watch(() => boardDataMutable.value.pins, () => {
   nextTick(() => {
     setupPinListeners();
   });
@@ -432,41 +427,6 @@ function setupFile() {
 
 // Workspace button
 
-
-function saveStateForUndo() {
-  undoStack.value.push({
-    positions: JSON.parse(JSON.stringify(positions.value)),
-    connections: JSON.parse(JSON.stringify(connections.value)),
-  });
-  redoStack.value = []; // Se borra redo al hacer una nueva acción
-}
-function undo() {
-  if (undoStack.value.length === 0) return;
-
-  const lastState = undoStack.value.pop();
-  redoStack.value.push({
-    positions: JSON.parse(JSON.stringify(positions.value)),
-    connections: JSON.parse(JSON.stringify(connections.value)),
-  });
-
-  positions.value = JSON.parse(JSON.stringify(lastState!.positions));
-  connections.value = JSON.parse(JSON.stringify(lastState!.connections));
-  nextTick(updateConnectionsPositions);
-}
-
-function redo() {
-  if (redoStack.value.length === 0) return;
-
-  const nextState = redoStack.value.pop();
-  undoStack.value.push({
-    positions: JSON.parse(JSON.stringify(positions.value)),
-    connections: JSON.parse(JSON.stringify(connections.value)),
-  });
-
-  positions.value = JSON.parse(JSON.stringify(nextState!.positions));
-  connections.value = JSON.parse(JSON.stringify(nextState!.connections));
-  nextTick(updateConnectionsPositions);
-}
 // Pantalla work
 
 const showWork = ref(false);
@@ -487,7 +447,7 @@ function clearConnections() {
       const pins = group.querySelectorAll<SVGElement>('[id]');
       pins.forEach(el => {
         const pinId = el.id;
-        if ((boardDataMutable.pins as string[]).includes(pinId)) {
+        if ((boardDataMutable.value.pins as string[]).includes(pinId)) {
           el.setAttribute("fill", "#ffd700");
         }
       });
@@ -511,15 +471,14 @@ function onWorkAction(action) {
     case 'zoomin': zoomIn(); break;
     case 'zoomout': zoomOut(); break;
     case 'clean': 
-      saveStateForUndo();
       clearConnections(); 
       break;
-    case 'undo': 
-      undo(); 
-      break;
-    case 'redo': 
-      redo(); 
-      break;
+    // case 'undo': 
+    //   undo(); 
+    //   break;
+    // case 'redo': 
+    //   redo(); 
+    //   break;
   }
 }
 
