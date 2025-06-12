@@ -1,3 +1,24 @@
+<!-- 
+/*  CREATino Maker-App
+ *  Copyright 2018-2025 Felix Garcia Carballeira, Diego Camarmas Alonso, Alejandro Calderon Mateos, Elisa Utrilla Arroyo
+ *
+ *  file is part of CREATOR.
+ *
+ *  CREATOR is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  CREATOR is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with CREATOR.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */ -->
+
 <script setup lang="ts">
 import { ref, reactive, watch, nextTick, onMounted, computed , onBeforeUnmount} from 'vue'
 import BoardElement from './components/BoardElements/BoardElement.vue';
@@ -9,9 +30,14 @@ import ConnectionsLines from './components/Gadgets/Lines.vue';
 import Menu from './components/Gadgets/GadgetMenu.vue';
 import LEDComponent from './components/Gadgets/Elements/LED.vue';
 import FileMenu from './components/Gadgets/Elements/ConfigFile.vue';
+import WorkMenu from './components/Gadgets/Elements/ConfigWork.vue';
 
 const workspaceRef = ref<HTMLDivElement | null>(null);
 const boardDataMutable = ref({ ...boardData });
+
+/// -----------UNDO y REDO
+const undoStack = ref<Array<{ positions: typeof positions.value, connections: typeof connections.value }>>([]);
+const redoStack = ref<Array<{ positions: typeof positions.value, connections: typeof connections.value }>>([]);
 
 
 const compState = ref(true);
@@ -106,6 +132,7 @@ function handleMouseDown(e: MouseEvent, id: string) {
 }
 
 function handleFlip(id: string) {
+  saveStateForUndo(); 
   const led = positions.value.find(item => item.id === id);
   if (led) led.flipped = !led.flipped;
 }
@@ -154,6 +181,7 @@ function handleMouseMove(e: MouseEvent) {
   }
 }
 function handleAddGadget(type: string) {
+  saveStateForUndo();
   if (type === 'LED') {
     const id = `led-${Date.now()}-${Math.random()}`;
     console.log("Adding LED with ID:", id);
@@ -180,12 +208,15 @@ function handleLedStateChange(id: string, state: { flipped: boolean; rotation: n
   }
 }
 function removeLed(id: string) {
+  saveStateForUndo();
   positions.value = positions.value.filter(item => item.id !== id)
   connections.value = connections.value.filter(conn =>
   !conn.fromPinId.startsWith(id) && !conn.toPinId.startsWith(id)
 )
+
 }
 function removeLine(id) {
+  saveStateForUndo();
   console.log("Removing line with ID:", id);
   connections.value = connections.value.filter(conn => conn.id !== id
 )
@@ -289,6 +320,7 @@ const lines = computed(() => {
 
 
 function handleMouseUp() {
+  saveStateForUndo();
   draggingId.value = null;
   setTimeout(() => {
     tempLine.value = null;
@@ -398,7 +430,56 @@ function setupFile() {
   showFile.value = !showFile.value; 
 }
 
+// Workspace button
+
+
+function saveStateForUndo() {
+  undoStack.value.push({
+    positions: JSON.parse(JSON.stringify(positions.value)),
+    connections: JSON.parse(JSON.stringify(connections.value)),
+  });
+  redoStack.value = []; // Se borra redo al hacer una nueva acción
+}
+function undo() {
+  if (undoStack.value.length === 0) return;
+
+  const lastState = undoStack.value.pop();
+  redoStack.value.push({
+    positions: JSON.parse(JSON.stringify(positions.value)),
+    connections: JSON.parse(JSON.stringify(connections.value)),
+  });
+
+  positions.value = JSON.parse(JSON.stringify(lastState!.positions));
+  connections.value = JSON.parse(JSON.stringify(lastState!.connections));
+  nextTick(updateConnectionsPositions);
+}
+
+function redo() {
+  if (redoStack.value.length === 0) return;
+
+  const nextState = redoStack.value.pop();
+  undoStack.value.push({
+    positions: JSON.parse(JSON.stringify(positions.value)),
+    connections: JSON.parse(JSON.stringify(connections.value)),
+  });
+
+  positions.value = JSON.parse(JSON.stringify(nextState!.positions));
+  connections.value = JSON.parse(JSON.stringify(nextState!.connections));
+  nextTick(updateConnectionsPositions);
+}
+// Pantalla work
+
+const showWork = ref(false);
+function setupWork() {
+  showWork.value = !showWork.value; 
+}
+
 function clearConnections() {
+  const shouldClear = window.confirm("¿Estás seguro de que quieres borrar todas las conexiones?");
+  if (!shouldClear) {
+    return; // el usuario canceló la acción
+  }
+
   connections.value = [];
   if (svgRef.value) {
     const group = svgRef.value.svgEl.querySelector<SVGElement>('#g147');
@@ -424,6 +505,22 @@ function zoomOut() {
   SCALE.value -= 0.5;
   if (SCALE.value < 1) SCALE.value = 1; // Limitar a 2x
   updateConnectionsPositions();
+}
+function onWorkAction(action) {
+  switch(action){
+    case 'zoomin': zoomIn(); break;
+    case 'zoomout': zoomOut(); break;
+    case 'clean': 
+      saveStateForUndo();
+      clearConnections(); 
+      break;
+    case 'undo': 
+      undo(); 
+      break;
+    case 'redo': 
+      redo(); 
+      break;
+  }
 }
 
 // Pantalla archivos
@@ -521,6 +618,7 @@ function cancelUpload() {
     <h1 style="text-align: center; margin-top: 1rem;">Creatino Maker</h1>
     <Menu v-if="showMenu" style="position: absolute; bottom:270px; right: 390px; z-index: 1200;" @add-gadget="handleAddGadget" />
     <FileMenu v-if="showFile" style="position: absolute; top: 170px; right: 250px; z-index: 1000;" @file-action="onFileAction" />
+    <WorkMenu v-if="showWork" style="position: absolute; top: 170px; left:100px; z-index: 1000;" @work-action="onWorkAction" />
     <!-- Pantalla save -->
     <div v-if="showSave" class="modal-backdrop">
       <div class="modal">
@@ -543,11 +641,14 @@ function cancelUpload() {
     <div ref="workspaceRef" style="width: 90%; height: 70%; border: 2px solid #ccc; position: relative; margin-bottom: 1rem; overflow: hidden;">
       <!-- Elementos de zoom -->
       <div style="position: absolute; top: 20px; left: 20px; z-index: 1100; display: flex; flex-direction: column;">
-        <button @click="zoomIn" style="font-size: 2rem; padding: 0.75rem 1.5rem; margin-bottom: 0.5rem;" id="menu-btn">
+        <!-- <button @click="zoomIn" style="font-size: 2rem; padding: 0.75rem 1.5rem; margin-bottom: 0.5rem;" id="menu-btn">
           <fa-icon :icon="['fas', 'magnifying-glass-plus']" style="width: 1em; height: 1em; color: white;" />
         </button>
         <button @click="zoomOut" style="font-size: 2rem; padding: 0.75rem 1.5rem;" id="menu-btn">
           <fa-icon :icon="['fas', 'magnifying-glass-minus']" style="width: 1em; height: 1em; color: white;" />
+        </button> -->
+        <button @click="setupWork" style="font-size: 2rem; padding: 0.75rem 1.5rem; margin-bottom: 0.5rem;" id="work-btn">
+          <fa-icon :icon="['fas', 'wrench']" style="width: 1em; height: 1em; color: white;" />
         </button>
       </div>
       <div style="position: absolute; top: 20px; right: 20px; z-index: 1100; display: flex; flex-direction: column;">
