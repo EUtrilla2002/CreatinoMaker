@@ -696,7 +696,9 @@ function cancelUpload() {
       <div style="position: absolute; bottom: 20px; right: 20px; z-index: 1100;">
         <!-- Botones del fondo -->
         <div style="position: relative; display: inline-block;">
-          <button @click="setupMenu" id="plus-btn" style="font-size: 2rem; padding: 0.75rem 1.5rem; margin-right: 0.5rem;">+</button>
+          <button @click="setupMenu" id="plus-btn" style="font-size: 1.5rem; padding: 0.75rem 1.5rem; margin-right: 0.5rem;">
+            <fa-icon :icon="['fas', 'circle-plus']" style="width: 1em; height: 1em; color: white;" />
+          </button>
           <button @click="runProgram" style="font-size: 1.5rem; padding: 0.75rem 1.5rem; margin-right: 0.5rem;">
             <fa-icon :icon="['fas', 'play']" style="width: 1em; height: 1em; color: white;" />
           </button>
@@ -838,7 +840,7 @@ function cancelUpload() {
   transition: background 0.2s, color 0.2s;
   font-weight: 500;
   padding: 0.5rem 1rem;
-  font-size: 1.1rem !important;
+  font-size: 1.5rem !important;
   padding: 0.6rem 1.2rem !important;
   border-radius: 0.375rem !important;
   min-width: 50px;
