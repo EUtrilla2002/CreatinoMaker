@@ -1,5 +1,5 @@
 <template>
-  <div ref="menuRef" class="w-80 bg-gray-900 text-white rounded shadow-lg p-4 relative" style="z-index: 1000;">
+  <div ref="menuRef" class="menu-panel" style="z-index: 1000;">
     <div v-for="category in filteredCategories" :key="category.name" class="mb-4">
       <div class="font-bold text-lg mb-1">{{ category.name }}</div>
       <div class="border-b border-gray-600 mb-2"></div>
@@ -111,35 +111,54 @@ onMounted(() => {
 .w-80 {
   width: 240px !important;
   min-height: 150px;
-  background: #2d2d2d !important;
+  background: #fff !important;                /* Bootstrap bg-white */
   border-radius: 1rem;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.10); /* Más suave para claro */
   padding: 1rem;
-  font-size: 0.8rem;
+  font-size: 0.95rem;
   z-index: 1000000;
+  color: #212529;                             /* Bootstrap text-dark */
+  border: 1px solid #dee2e6;                  /* Bootstrap border */
 }
 
 .bg-gray-900 {
-  background: #2d2d2d !important;
+  background: #fff !important;
 }
 
 .category-title {
   font-weight: bold;
   font-size: 1rem;
   padding: 0.5rem 1rem 0.25rem 1rem;
+  color: #212529;
 }
 
 .category-divider {
-  border-bottom: 1px solid #444;
+  border-bottom: 1px solid #dee2e6;           /* Bootstrap border */
   margin: 0 1rem 0.5rem 1rem;
 }
 
 button.bg-gray-700 {
-  background-color: #444 !important;
+  background-color: #e2e6ea !important;       /* Bootstrap hover */
+}
+
+button {
+  background: #f8f9fa !important;             /* Bootstrap bg-light */
+  color: #212529 !important;                  /* Bootstrap text-dark */
+  border: 1px solid #ced4da !important;       /* Bootstrap border */
+  border-radius: 0.375rem;
+  margin-bottom: 0.3rem;
+  width: 100%;
+  text-align: left;
+  transition: background 0.2s, color 0.2s;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
 }
 
 button:hover {
-  background-color: #555 !important;
+  background-color: #e2e6ea !important;       /* Bootstrap hover */
+  color: #212529 !important;
 }
 
 .flex {

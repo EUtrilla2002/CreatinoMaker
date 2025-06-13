@@ -1,5 +1,5 @@
 <template>
-  <div class="w-80 bg-gray-900 text-white rounded shadow-lg">
+  <div class="menu-panel">
     <!-- Component List -->
     <div v-for="category in filteredCategories" :key="category.name" class="category-block">
       <div class="category-title">{{ category.name }}</div>
@@ -12,10 +12,19 @@
           type="button"
           @click="handleFile(item.label)"
         >
+        
           <fa-icon :icon="item.icon" class="icon-separated" />
           <span>{{ item.label }}</span>
         </button>
       </div>
+    </div>
+    <div class="flex items-center px-4 py-2 darkmode-switch-row">
+      <fa-icon icon="moon" class="icon-separated" />
+      <span class="mr-2">Dark Mode</span>
+      <label class="switch slider-sep">
+        <input type="checkbox" v-model="darkMode" @click="handleFile('DarkMode')" />
+        <span class="slider"></span>
+      </label>
     </div>
   </div>
 </template>
@@ -47,12 +56,17 @@ function handleFile(label) {
       break;
     case 'Info':
       emit('work-action', 'info')
-      break;     
+      break;
+    case 'DarkMode':
+      emit('work-action', 'dark')
+      break;         
   }
 }
 
 
 const search = ref('')
+
+const darkMode = ref(false)
 
 const categories = ref([
   {
@@ -91,42 +105,38 @@ const filteredCategories = computed(() => {
   width: 220px !important;
   max-height: 300px;
   overflow-y: auto;
-  background: #2d2d2d !important;
+  background: #fff !important;           /* Bootstrap bg-white */
   border-radius: 0.75rem;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
   padding: 0.75rem;
-  font-size: 1 rem;
+  font-size: 1rem;
+  color: #212529;                        /* Bootstrap text-dark */
+  border: 1px solid #dee2e6;             /* Bootstrap border */
 }
 
 .bg-gray-900 {
-  background: #2d2d2d !important;
-}
-.icon-separated {
-  margin-right: 1rem; /* Aumenta separación entre icono y texto */
-  min-width: 1.25rem; /* Opcional: asegura espacio fijo para alinear */
-  text-align: center;
+  background: #fff !important;
 }
 
 button {
   font-size: 1rem !important;
   padding: 0.4rem 0.6rem;
-  border: none;
-  background: #444;
+  border: 1px solid #ced4da;             /* Bootstrap border */
+  background: #f8f9fa;                   /* Bootstrap bg-light */
   text-align: left;
-  color: white;
+  color: #212529;                        /* Bootstrap text-dark */
   width: 100%;
   cursor: pointer;
   display: flex;
   align-items: center;
   border-radius: 0.375rem;
+  margin-bottom: 0.3rem;
+  transition: background 0.2s, color 0.2s;
 }
 
 button:hover {
-  background-color: #1d1b1b;
-}
-
-button.bg-gray-700 {
-  background-color: #555 !important;
+  background-color: #e2e6ea;             /* Bootstrap hover */
+  color: #212529;
 }
 
 .fa-icon {
@@ -139,11 +149,58 @@ button.bg-gray-700 {
   gap: 0.3rem;
 }
 
-::-webkit-scrollbar {
-  width: 4px;
+/* Switch slider styles */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 38px;
+  height: 20px;
 }
-::-webkit-scrollbar-thumb {
-  background: #64676c;
-  border-radius: 2px;
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #adb5bd;             /* Bootstrap secondary */
+  transition: .4s;
+  border-radius: 20px;
+}
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+.slider-sep {
+  margin-left: 1rem;
+}
+.switch input:checked + .slider {
+  background-color: #007bff;             /* Bootstrap primary */
+}
+.switch input:checked + .slider:before {
+  transform: translateX(18px);
+}
+.moon-icon {
+  font-size: 1.2rem;
+  margin-right: 1rem;
+}
+.darkmode-switch-row {
+  margin-top: 0.3rem;
+  margin-right: 3rem;
+  border-radius: 0.375rem;
+}
+.icon-separated {
+  margin-right: 1rem;
+  min-width: 1.25rem;
+  text-align: center;
 }
 </style>

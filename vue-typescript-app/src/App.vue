@@ -495,6 +495,9 @@ function onWorkAction(action) {
     case 'redo': 
       redo(); 
       break;
+    case 'dark': 
+      changeDarkMode(); 
+      break;  
   }
 }
 function saveStateForUndo() {
@@ -535,6 +538,27 @@ function redo() {
     updateConnectionsPositions();
   }
 }
+
+const darkMode = ref(false);
+
+function changeDarkMode() {
+  darkMode.value = !darkMode.value;
+  const app = document.getElementById('app-main');
+  if (darkMode.value) {
+    app?.classList.add('dark-mode');
+    localStorage.setItem("conf_dark_mode", "on");
+  } else {
+    app?.classList.remove('dark-mode');
+    localStorage.setItem("conf_dark_mode", "off");
+  }
+}
+onMounted(() => {
+  const app = document.getElementById('app-main');
+  if (localStorage.getItem("conf_dark_mode") === "on") {
+    darkMode.value = true;
+    app?.classList.add('dark-mode');
+  }
+});
 // Pantalla archivos
 function onFileAction(action) {
   if (action === 'save') {
@@ -626,9 +650,9 @@ function cancelUpload() {
 
 <template>
   
-  <div class="App" @mousemove="handleMouseMove" @mouseup="handleMouseUp" style="width: 100vw; height: 100vh; position: relative; overflow: hidden;">
+  <div id="app-main" class="App" @mousemove="handleMouseMove" @mouseup="handleMouseUp" style="width: 100vw; height: 100vh; position: relative; overflow: hidden;">
     <h1 style="text-align: center; margin-top: 1rem;">Creatino Maker</h1>
-    <Menu v-if="showMenu" style="position: absolute; bottom:270px; right: 390px; z-index: 1200;" @add-gadget="handleAddGadget" />
+    <Menu v-if="showMenu" :dark-mode="darkMode" style="position: absolute; bottom:270px; right: 390px; z-index: 1200;" @add-gadget="handleAddGadget" />
     <FileMenu v-if="showFile" style="position: absolute; top: 170px; right: 250px; z-index: 1000;" @file-action="onFileAction" />
     <WorkMenu v-if="showWork" style="position: absolute; top: 170px; left:100px; z-index: 1000;" @work-action="onWorkAction" />
     <!-- Pantalla save -->
@@ -676,9 +700,9 @@ function cancelUpload() {
           <button @click="runProgram" style="font-size: 1.5rem; padding: 0.75rem 1.5rem; margin-right: 0.5rem;">
             <fa-icon :icon="['fas', 'play']" style="width: 1em; height: 1em; color: white;" />
           </button>
-          <button @click="clearConnections" style="font-size: 1.5rem; padding: 0.75rem 1.5rem;">
+          <!-- <button @click="clearConnections" style="font-size: 1.5rem; padding: 0.75rem 1.5rem;">
             <fa-icon :icon="['fas', 'trash']" style="width: 1em; height: 1em; color: white;" />
-          </button>
+          </button> -->
           <!-- <button @click="handleAddGadget('LED')" style="position: absolute; top: -80px; left: 10px;">Añadir LED</button> -->
 
         </div>
@@ -784,8 +808,128 @@ function cancelUpload() {
   z-index: 9999;
 }
 .modal {
-  background: rgb(39, 35, 35);
+  background: #fff;              /* Fondo blanco */
+  color: #212529;                /* Texto oscuro */
   padding: 20px;
   border-radius: 8px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.10); /* Sombra suave */
+}
+/* Estilos claros por defecto */
+#app-main {
+  background-color: #f8f9fa; /* Bootstrap bg-light */
+  color: #212529;            /* Bootstrap text-dark */
+}
+#app-main button {
+  background: #007bff;       /* Bootstrap primary */
+  color: #f7f7f7;
+  border: 1px solid #007bff;
+  border-radius: 0.25rem;
+  transition: background 0.2s, color 0.2s;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+}
+#app-main button,
+.menu-panel button,
+.modal button {
+  background: #007bff;       /* Bootstrap primary */
+  color: #f7f7f7;
+  border: 1px solid #007bff;
+  border-radius: 0.25rem;
+  transition: background 0.2s, color 0.2s;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  font-size: 1.1rem !important;
+  padding: 0.6rem 1.2rem !important;
+  border-radius: 0.375rem !important;
+  min-width: 50px;
+  min-height: 50px;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+#app-main button:hover {
+  background: #0056b3;       /* Bootstrap primary darken */
+  color: #fff;
+}
+#app-main input,
+#app-main select,
+#app-main textarea {
+  background: #e2e4e6;
+  color: #212529;
+  border: 1px solid #ced4da;
+  border-radius: 0.25rem;
+  padding: 0.375rem 0.75rem;
+}
+.menu-panel {
+  background: #fff;
+  color: #212529;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.15);
+  padding: 1rem;
+  min-width: 220px;
+  border: 1px solid #dee2e6;
+  font-size: 1rem;
+  z-index: 1200;
+}
+.menu-panel button {
+  background: #f8f9fa;
+  color: #212529;
+  border: 1px solid #ced4da;
+  border-radius: 0.25rem;
+  margin-bottom: 0.5rem;
+  width: 100%;
+  text-align: left;
+  transition: background 0.2s;
+  font-weight: 500;
+}
+.menu-panel button:hover {
+  background: #e2e6ea;
+}
+/* Estilos dark-mode tipo BootstrapVue */
+.dark-mode {
+  background-color: #212529 !important; /* Bootstrap bg-dark */
+  color: #f8f9fa !important;            /* Bootstrap text-light */
+}
+.dark-mode button {
+  background: #007bff !important;       /* Bootstrap secondary dark */
+  color: #f8f9fa !important;
+  border-color: #454d55 !important;
+}
+.dark-mode button:hover {
+  background: #495057 !important;
+  color: #f8f9fa !important;
+}
+.dark-mode input,
+.dark-mode select,
+.dark-mode textarea {
+  background: #343a40 !important;
+  color: #f8f9fa !important;
+  border-color: #454d55 !important;
+}
+.dark-mode .menu-panel {
+  background: #23272b !important;
+  color: #f8f9fa !important;
+  border: 1px solid #343a40 !important;
+}
+.dark-mode .menu-panel button {
+  background: #343a40 !important;
+  color: #646464 !important;
+  border: 1px solid #454d55 !important;
+}
+.dark-mode .menu-panel button:hover {
+  background: #495057 !important;
+}
+.dark-mode .menu-panel .category-title {
+  color: #f8f9fa !important; /* Bootstrap text-light */
+}
+.dark-mode .modal {
+  background: #23272b !important;
+  color: #f8f9fa !important;
+}
+.dark-mode .modal input {
+  background: #343a40 !important;
+  color: #f8f9fa !important;
+  border-color: #454d55 !important;
 }
 </style>

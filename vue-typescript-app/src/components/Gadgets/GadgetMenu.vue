@@ -1,13 +1,13 @@
 <template>
-  <div class="w-80 bg-gray-900 text-white rounded shadow-lg">
+  <div class="menu-panel">
     <!-- Search Bar -->
     <div class="p-2">
-      <input
-        v-model="search"
-        type="text"
-        placeholder="Search..."
-        class="w-full p-2 bg-gray-800 text-white rounded focus:outline-none"
-      />
+    <input
+      v-model="search"
+      type="text"
+      placeholder="Search..."
+      class="w-full p-2 rounded focus:outline-none"
+    />
     </div>
 
     <!-- Component List -->
@@ -87,54 +87,73 @@ const filteredCategories = computed(() => {
 })
 </script>
 <style scoped>
-.w-80 {
-  width: 520px !important;
-  max-height: 600px; /* altura máxima */
-  overflow-y: auto;  /* activa scroll vertical si sobrepasa */
-  background: #2d2d2d !important;
+.menu-panel {
+  width: 340px !important;
+  max-height: 500px;
+  overflow-y: auto;
+  background: #fff !important;                /* Bootstrap bg-white */
   border-radius: 1rem;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.25);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.10);
   padding-bottom: 2.5rem;
-  font-size: 1.25rem;
-}
-.bg-gray-900 {
-  background: #2d2d2d !important;
+  font-size: 1.1rem;
+  color: #212529;                             /* Bootstrap text-dark */
+  border: 1px solid #dee2e6;                  /* Bootstrap border */
 }
 
 .p-2 input[type="text"] {
-  height: 2rem;
-  width: 80%;
-  font-size: 1.3rem;
-  margin-top: 1rem;
-  padding: 1rem !important;
-}
-
-.category-title {
-  font-weight: bold;
-  font-size: 1.5rem;
-  padding: 1rem 1.5rem 0.5rem 1.5rem;
+  height: 1.6rem;           /* más bajo */
+  width: 90%;               /* más angosto */
+  font-size: 0.95rem;       /* texto más pequeño */
+  margin-top: 0.5rem;       /* menos espacio arriba */
+  padding: 0.4rem !important; /* menos padding */
+  background: #f8f9fa;
+  color: #212529;
+  border: 1px solid #ced4da;
+  border-radius: 0.375rem;
 }
 
 .category-divider {
-  border-bottom: 2px solid #444;
+  border-bottom: 1px solid #dee2e6;
   margin: 0 1.5rem 0.5rem 1.5rem;
 }
 
-.px-4, .py-2, .font-bold, .text-sm, .uppercase, .text-gray-400,
-.flex, .items-center, .hover\:bg-gray-800, .cursor-pointer {
-  font-size: 1.5rem !important;
+button {
+  font-size: 1rem !important;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid #ced4da;             /* Bootstrap border */
+  background: #f8f9fa;                   /* Bootstrap bg-light */
+  text-align: left;
+  color: #212529;                        /* Bootstrap text-dark */
+  width: 100%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  border-radius: 0.375rem;
+  margin-bottom: 0.3rem;
+  transition: background 0.2s, color 0.2s;
+}
+
+button:hover {
+  background-color: #e2e6ea !important;       /* Bootstrap hover */
+  color: #212529 !important;
+}
+
+.flex-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.w-5, .h-5 {
+  width: 1.25rem !important;
+  height: 1.25rem !important;
 }
 
 ::-webkit-scrollbar {
   width: 6px;
 }
 ::-webkit-scrollbar-thumb {
-  background: #64676c;
+  background: #dee2e6;
   border-radius: 3px;
-}
-.flex-col {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem; /* Espacio entre botones, opcional */
 }
 </style>

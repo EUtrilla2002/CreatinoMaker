@@ -1,5 +1,5 @@
 <template>
-  <div ref="menuRef" class="w-56 bg-gray-900 text-white rounded shadow-lg p-2 relative" style="z-index: 1000;">
+  <div ref="menuRef" class="menu-panel" style="z-index: 1000;">
     <div
       v-for="category in filteredCategories"
       :key="category.name"
