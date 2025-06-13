@@ -122,6 +122,7 @@ const filename = ref('board-state');
 const SCALE= ref(2); // empieza en 1x
 
 function handleMouseDown(e: MouseEvent, id: string) {
+  saveStateForUndo() 
   draggingId.value = id;
   const element = positions.value.find(item => item.id === id);
   if (!element) return;
@@ -180,6 +181,7 @@ function handleMouseMove(e: MouseEvent) {
   }
 }
 function handleAddGadget(type: string) {
+  saveStateForUndo() 
   if (type === 'LED') {
     const id = `led-${Date.now()}-${Math.random()}`;
     console.log("Adding LED with ID:", id);
@@ -197,6 +199,7 @@ function handleAddGadget(type: string) {
   }
 }
 function handleLedStateChange(id: string, state: { flipped: boolean; rotation: number ,color: string}) {
+  saveStateForUndo() 
   const led = positions.value.find(item => item.id === id);
   if (led) {
     led.flipped = state.flipped;
@@ -206,6 +209,7 @@ function handleLedStateChange(id: string, state: { flipped: boolean; rotation: n
   }
 }
 function removeLed(id: string) {
+  saveStateForUndo() 
   positions.value = positions.value.filter(item => item.id !== id)
   connections.value = connections.value.filter(conn =>
   !conn.fromPinId.startsWith(id) && !conn.toPinId.startsWith(id)
@@ -440,7 +444,6 @@ function clearConnections() {
     return;
   }
 
-
   // 2. Restaurar color de los pines en el SVG
   if (svgRef.value) {
     const group = svgRef.value.svgEl.querySelector<SVGElement>('#g147');
@@ -486,15 +489,52 @@ function onWorkAction(action) {
     case 'clean': 
       clearConnections(); 
       break;
-    // case 'undo': 
-    //   undo(); 
-    //   break;
-    // case 'redo': 
-    //   redo(); 
-    //   break;
+    case 'undo': 
+      undo(); 
+      break;
+    case 'redo': 
+      redo(); 
+      break;
   }
 }
+function saveStateForUndo() {
+  // Guarda una copia profunda del estado actual
+  undoStack.value.push({
+    positions: JSON.parse(JSON.stringify(positions.value)),
+    connections: JSON.parse(JSON.stringify(connections.value)),
+  });
+  // Limita el tamaño del stack si quieres
+  if (undoStack.value.length > 50) undoStack.value.shift();
+}
 
+function undo() {
+  if (undoStack.value.length === 0) return;
+  // Guarda el estado actual en el redoStack antes de deshacer
+  redoStack.value.push({
+    positions: JSON.parse(JSON.stringify(positions.value)),
+    connections: JSON.parse(JSON.stringify(connections.value)),
+  });
+  const prevState = undoStack.value.pop();
+  if (prevState) {
+    positions.value = JSON.parse(JSON.stringify(prevState.positions));
+    connections.value = JSON.parse(JSON.stringify(prevState.connections));
+    updateConnectionsPositions();
+  }
+}
+function redo() {
+  if (redoStack.value.length === 0) return;
+  // Guarda el estado actual en el undoStack antes de rehacer
+  undoStack.value.push({
+    positions: JSON.parse(JSON.stringify(positions.value)),
+    connections: JSON.parse(JSON.stringify(connections.value)),
+  });
+  const nextState = redoStack.value.pop();
+  if (nextState) {
+    positions.value = JSON.parse(JSON.stringify(nextState.positions));
+    connections.value = JSON.parse(JSON.stringify(nextState.connections));
+    updateConnectionsPositions();
+  }
+}
 // Pantalla archivos
 function onFileAction(action) {
   if (action === 'save') {
