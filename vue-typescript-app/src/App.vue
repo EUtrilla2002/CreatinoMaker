@@ -437,13 +437,14 @@ function setupWork() {
 function clearConnections() {
   const shouldClear = window.confirm("¿Estás seguro de que quieres borrar todas las conexiones?");
   if (!shouldClear) {
-    return; // el usuario canceló la acción
+    return;
   }
 
-  connections.value = [];
+
+  // 2. Restaurar color de los pines en el SVG
   if (svgRef.value) {
     const group = svgRef.value.svgEl.querySelector<SVGElement>('#g147');
-    if (group) {
+    if (group && boardDataMutable.value?.pins) {
       const pins = group.querySelectorAll<SVGElement>('[id]');
       pins.forEach(el => {
         const pinId = el.id;
@@ -453,6 +454,18 @@ function clearConnections() {
       });
     }
   }
+
+  // 3. Eliminar LEDs que estaban conectados
+  positions.value = positions.value.filter(component => {
+    // Si es un LED, lo eliminamos si hay alguna conexión cuyo id contenga el id del LED
+    if (component.id.startsWith('led-')) {
+      return !connections.value.some(conn => conn.id.includes(component.id));
+    }
+    return true; // mantener si no es LED
+  });
+  connections.value = [];
+
+  // 4. Resetear selección
   selectedPin.value = null;
 }
 
