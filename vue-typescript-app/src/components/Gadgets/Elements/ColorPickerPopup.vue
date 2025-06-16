@@ -5,14 +5,18 @@
 
     <!-- Popup anclado -->
     <div
-      class="color-popup"
-      :style="{ top: position.y + 'px', left: position.x + 'px',  width: width + 'px'  }"
+      class="color-popup border rounded-3 shadow"
+      :class="isDark ? 'bg-dark text-light' : 'bg-white'"
+      :style="{ top: position.y + 'px', left: position.x + 'px', width: width + 'px' }"
     >
-      <div class="popup-arrow"></div>
+      <div
+        class="popup-arrow"
+        :class="isDark ? 'arrow-dark' : 'arrow-light'"
+      ></div>
 
-      <div class="popup-content">
+      <div class="popup-content p-3">
         <!-- Color Picker -->
-        <div class="picker-wrapper">
+        <div class="picker-wrapper mb-3">
           <ColorPicker
             v-model:pureColor="color"
             format="hex"
@@ -28,17 +32,17 @@
           />
         </div>
 
-        <div class="mt-3 text-white text-sm">
+        <div class="mb-3 small" :class="isDark ? 'text-light' : 'text-secondary'">
           Color seleccionado: <span :style="{ color }">{{ color }}</span>
         </div>
         <button
-          class="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 transition"
+          class="btn btn-primary me-2"
           @click="$emit('update:modelValue', color)"
         >
           Aplicar Color
         </button>
         <button
-          class="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-500 transition"
+          class="btn btn-outline-secondary"
           @click="$emit('close')"
         >
           Cerrar
@@ -49,7 +53,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed ,onMounted} from 'vue'
+import { computed } from 'vue'
 import { ColorPicker } from 'vue3-colorpicker'
 import 'vue3-colorpicker/style.css'
 
@@ -64,15 +68,15 @@ const emit = defineEmits(['update:modelValue', 'close'])
 const color = computed({
   get: () => props.modelValue,
   set: value => {
-    console.log('ColorPicker color cambiado:', value)  // <--- aquí logueas el cambio
     emit('update:modelValue', value)
   },
 })
 
-
-// onMounted(() => {
-//   console.log('ColorPickerPopup montado y visible, posición:', props.position)
-// })
+// Detecta modo oscuro por clase en body o app
+const isDark = computed(() => {
+  return document.body.classList.contains('dark-mode') ||
+    document.querySelector('#app-main')?.classList.contains('dark-mode')
+})
 </script>
 
 <style scoped>
@@ -88,10 +92,7 @@ const color = computed({
   position: fixed;
   z-index: 50;
   transform: translateY(10px);
-  border: 2px solid red;
-  background-color: rgba(255, 255, 255, 0.1);
 }
-
 
 .popup-arrow {
   position: absolute;
@@ -99,18 +100,24 @@ const color = computed({
   left: 30px;
   width: 0;
   height: 0;
+}
+.arrow-light {
   border-left: 10px solid transparent;
   border-right: 10px solid transparent;
-  border-bottom: 10px solid #3d3d3d;
+  border-bottom: 10px solid #fff;
+}
+.arrow-dark {
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-bottom: 10px solid #23272b;
 }
 
 .popup-content {
-  background: #2d2d2d;
+  background: transparent;
   border-radius: 1rem;
-  border: 1px solid #555;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
-  padding: 1.5rem;
-  width: 100%;         /* 🔹 Usa todo el ancho disponible */
+  box-shadow: none;
+  padding: 0;
+  width: 100%;
   box-sizing: border-box;
 }
 

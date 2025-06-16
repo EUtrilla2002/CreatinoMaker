@@ -1,19 +1,19 @@
 <template>
-  <div ref="menuRef" class="menu-panel" style="z-index: 1000;">
+  <div ref="menuRef" class="menu-panel bg-white border rounded-3 shadow-sm p-3" :class="isDark ? 'bg-dark text-light' : 'bg-white'" style="width: 240px; min-height: 150px; z-index: 1000;">
     <div v-for="category in filteredCategories" :key="category.name" class="mb-4">
-      <div class="font-bold text-lg mb-1">{{ category.name }}</div>
-      <div class="border-b border-gray-600 mb-2"></div>
-      <div class="flex flex-col gap-1">
+      <div class="fw-bold fs-6 mb-2">{{ category.name }}</div>
+      <hr class="my-2" />
+      <div class="d-flex flex-column gap-1">
         <button
           v-for="item in category.items"
           :key="item.label"
           :ref="item.label === 'Color' ? setColorButtonRef : null"
-          class="flex items-center px-4 py-2 hover:bg-gray-800 cursor-pointer w-full text-left bg-transparent border-0 focus:outline-none"
-          :class="{ 'bg-gray-700': selectedItem === item.label }"
+          class="btn btn-light text-start d-flex align-items-center mb-1"
+          :class="{ active: selectedItem === item.label }"
           type="button"
           @click="onItemClick(item.label)"
         >
-          <fa-icon :icon="item.icon" class="mr-2" />
+          <fa-icon :icon="item.icon" class="me-2" />
           <span>{{ item.label }}</span>
         </button>
       </div>
@@ -32,7 +32,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, nextTick ,onMounted, } from 'vue'
+import { ref, computed, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import ColorPickerPopup from './ColorPickerPopup.vue'
 const menuRef = ref<HTMLElement | null>(null)
 const menuWidth = ref(0)
@@ -62,6 +62,7 @@ const setColorButtonRef = (el: HTMLElement | null) => {
   if (el) colorButtonRef.value = el
 }
 
+
 const onItemClick = async (label: string) => {
   if (label === 'Color') {
     await nextTick()
@@ -75,13 +76,11 @@ const onItemClick = async (label: string) => {
     }
   }
   if (label === 'Flip') {
-    // Y si no fuera solo con un botón, sino con un evento? EJ: Ctrl + Flechita
-    console.log('Flip action triggered')
     emit('flip') 
     return
   }
   if (label === 'Rotate') {
-    emit('rotate') // emite el evento rotate
+    emit('rotate')
     return
   }
   if (label === 'Delete') { 
@@ -92,7 +91,7 @@ const onItemClick = async (label: string) => {
 }
 const onColorChange = (color: string) => {
   selectedColor.value = color
-  emit('update:modelValue', color) // <--- propaga el evento hacia LED.vue
+  emit('update:modelValue', color)
 }
 
 onMounted(() => {
@@ -104,82 +103,57 @@ onMounted(() => {
     }
   })
 })
+
+// Si quieres modo oscuro automático:
+const isDark = ref(document.body.classList.contains('dark-mode') || document.querySelector('#app-main')?.classList.contains('dark-mode'))
+
+function updateDarkMode() {
+  isDark.value = document.body.classList.contains('dark-mode') || document.querySelector('#app-main')?.classList.contains('dark-mode')
+}
+
+onMounted(() => {
+  const observer = new MutationObserver(updateDarkMode)
+  observer.observe(document.body, { attributes: true, attributeFilter: ['class'] })
+  const appMain = document.querySelector('#app-main')
+  if (appMain) {
+    observer.observe(appMain, { attributes: true, attributeFilter: ['class'] })
+  }
+  // Limpieza
+  onBeforeUnmount(() => observer.disconnect())
+})
 </script>
 
-
-<style scoped>
-.w-80 {
-  width: 240px !important;
-  min-height: 150px;
-  background: #fff !important;                /* Bootstrap bg-white */
-  border-radius: 1rem;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.10); /* Más suave para claro */
-  padding: 1rem;
-  font-size: 0.95rem;
-  z-index: 1000000;
-  color: #212529;                             /* Bootstrap text-dark */
-  border: 1px solid #dee2e6;                  /* Bootstrap border */
-}
-
-.bg-gray-900 {
-  background: #fff !important;
-}
-
-.category-title {
-  font-weight: bold;
+<style>
+.menu-panel {
   font-size: 1rem;
-  padding: 0.5rem 1rem 0.25rem 1rem;
+  background: #fff;
+  border-radius: 1rem;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.10);
   color: #212529;
+  border: 1px solid #dee2e6;
 }
-
-.category-divider {
-  border-bottom: 1px solid #dee2e6;           /* Bootstrap border */
-  margin: 0 1rem 0.5rem 1rem;
+.menu-panel.bg-dark {
+  background: #23272b !important;
+  color: #f8f9fa !important;
+  border-color: #343a40 !important;
 }
-
-button.bg-gray-700 {
-  background-color: #e2e6ea !important;       /* Bootstrap hover */
-}
-
-button {
-  background: #f8f9fa !important;             /* Bootstrap bg-light */
-  color: #212529 !important;                  /* Bootstrap text-dark */
-  border: 1px solid #ced4da !important;       /* Bootstrap border */
-  border-radius: 0.375rem;
-  margin-bottom: 0.3rem;
-  width: 100%;
-  text-align: left;
-  transition: background 0.2s, color 0.2s;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  padding: 0.5rem 1rem;
-}
-
-button:hover {
-  background-color: #e2e6ea !important;       /* Bootstrap hover */
+.menu-panel .btn.active,
+.menu-panel .btn:active {
+  background-color: #e2e6ea !important;
   color: #212529 !important;
 }
-
-.flex {
-  display: flex;
+.menu-panel.bg-dark .btn {
+  background: #343a40 !important;
+  color: #f8f9fa !important;
+  border-color: #495057 !important;
 }
-
-.flex-col {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
+.menu-panel.bg-dark .btn.active,
+.menu-panel.bg-dark .btn:active {
+  background-color: #495057 !important;
+  color: #fff !important;
 }
-
-.ml-4 {
-  margin-left: 1rem;
-}
-
-.p-4 {
-  padding: 1rem;
-}
-
-.w-60 {
-  width: 15rem;
+.menu-panel .btn:hover {
+  background: #1e40af !important;
+  color: #fff !important;
 }
 </style>

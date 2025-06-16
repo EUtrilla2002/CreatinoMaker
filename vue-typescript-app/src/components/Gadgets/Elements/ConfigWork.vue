@@ -1,43 +1,46 @@
 <template>
-  <div class="menu-panel">
+  <div class="menu-panel bg-white border rounded-3 shadow-sm p-3" :class="{ 'bg-dark text-light': isDark }" style="width:220px;max-height:300px;overflow-y:auto;">
     <!-- Component List -->
-    <div v-for="category in filteredCategories" :key="category.name" class="category-block">
-      <div class="category-title">{{ category.name }}</div>
-      <div class="category-divider"></div>
-      <div class="flex flex-col">
-        <button
-          v-for="item in category.items"
-          :key="item.label"
-          class="flex items-center px-4 py-2 hover:bg-gray-800 cursor-pointer w-full text-left bg-transparent border-0 focus:outline-none"
-          type="button"
-          @click="handleFile(item.label)"
-        >
-        
-          <fa-icon :icon="item.icon" class="icon-separated" />
+    <div v-for="category in filteredCategories" :key="category.name" class="mb-3">
+      <div class="fw-bold fs-6 mb-1">{{ category.name }}</div>
+      <hr class="my-2" />
+      <div class="d-flex flex-column gap-1">
+      <button
+        v-for="item in category.items"
+        :key="item.label"
+        class="btn btn-primary text-start d-flex align-items-center mb-1"
+        @click="handleFile(item.label)"
+        type="button"
+      >
+          <fa-icon :icon="item.icon" class="me-2" />
           <span>{{ item.label }}</span>
         </button>
       </div>
     </div>
-    <div class="flex items-center px-4 py-2 darkmode-switch-row">
-      <fa-icon icon="moon" class="icon-separated" />
-      <span class="mr-2">Dark Mode</span>
-      <label class="switch slider-sep">
-        <input type="checkbox" v-model="darkMode" @click="handleFile('DarkMode')" />
-        <span class="slider"></span>
-      </label>
+    <div class="d-flex align-items-center px-2 py-2 rounded-2" :class="{ 'bg-secondary bg-opacity-10': isDark }">
+      <fa-icon icon="moon" class="me-2" />
+      <span class="me-2">Dark Mode</span>
+      <div class="form-check form-switch ms-auto">
+        <input
+          class="form-check-input"
+          type="checkbox"
+          role="switch"
+          v-model="darkMode"
+          @change="handleFile('DarkMode')"
+          id="darkModeSwitch"
+        >
+        <label class="form-check-label" for="darkModeSwitch"></label>
+      </div>
     </div>
   </div>
 </template>
 
-
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 
 const emit = defineEmits(['work-action']);
 
-
 function handleFile(label) {
-  console.log(`Action: ${label}`)
   switch(label) {
     case 'Undo':
       emit('work-action', 'undo')
@@ -63,9 +66,7 @@ function handleFile(label) {
   }
 }
 
-
 const search = ref('')
-
 const darkMode = ref(false)
 
 const categories = ref([
@@ -83,7 +84,7 @@ const categories = ref([
       { label: 'Zoom-Out', icon: 'magnifying-glass-minus' },
     ],
   },
-    {
+  {
     name: 'Other',
     items: [
       { label: 'Clean All', icon: 'trash'  },
@@ -99,108 +100,36 @@ const filteredCategories = computed(() => {
     items: cat.items.filter(item => item.label.toLowerCase().includes(search.value.toLowerCase())),
   })).filter(cat => cat.items.length > 0)
 })
+
+// Detecta modo oscuro por clase en body o app
+const isDark = ref(document.body.classList.contains('dark-mode') || document.querySelector('#app-main')?.classList.contains('dark-mode'))
+
+function updateDarkMode() {
+  isDark.value = document.body.classList.contains('dark-mode') || document.querySelector('#app-main')?.classList.contains('dark-mode')
+}
+
+onMounted(() => {
+  const observer = new MutationObserver(updateDarkMode)
+  observer.observe(document.body, { attributes: true, attributeFilter: ['class'] })
+  const appMain = document.querySelector('#app-main')
+  if (appMain) {
+    observer.observe(appMain, { attributes: true, attributeFilter: ['class'] })
+  }
+  // Limpieza
+  onBeforeUnmount(() => observer.disconnect())
+})
 </script>
-<style scoped>
-.w-80 {
-  width: 220px !important;
-  max-height: 300px;
-  overflow-y: auto;
-  background: #fff !important;           /* Bootstrap bg-white */
-  border-radius: 0.75rem;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
-  padding: 0.75rem;
-  font-size: 1rem;
-  color: #212529;                        /* Bootstrap text-dark */
-  border: 1px solid #dee2e6;             /* Bootstrap border */
-}
 
-.bg-gray-900 {
-  background: #fff !important;
+<style>
+.menu-panel .btn-primary {
+  background-color: #0d6efd !important;
+  color: #fff !important;
+  border-color: #0d6efd !important;
 }
-
-button {
-  font-size: 1rem !important;
-  padding: 0.4rem 0.6rem;
-  border: 1px solid #ced4da;             /* Bootstrap border */
-  background: #f8f9fa;                   /* Bootstrap bg-light */
-  text-align: left;
-  color: #212529;                        /* Bootstrap text-dark */
-  width: 100%;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  border-radius: 0.375rem;
-  margin-bottom: 0.3rem;
-  transition: background 0.2s, color 0.2s;
-}
-
-button:hover {
-  background-color: #e2e6ea;             /* Bootstrap hover */
-  color: #212529;
-}
-
-.fa-icon {
-  margin-right: 0.5rem;
-}
-
-.flex-col {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-}
-
-/* Switch slider styles */
-.switch {
-  position: relative;
-  display: inline-block;
-  width: 38px;
-  height: 20px;
-}
-.switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-.slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background-color: #adb5bd;             /* Bootstrap secondary */
-  transition: .4s;
-  border-radius: 20px;
-}
-.slider:before {
-  position: absolute;
-  content: "";
-  height: 16px;
-  width: 16px;
-  left: 2px;
-  bottom: 2px;
-  background-color: white;
-  transition: .4s;
-  border-radius: 50%;
-}
-.slider-sep {
-  margin-left: 1rem;
-}
-.switch input:checked + .slider {
-  background-color: #007bff;             /* Bootstrap primary */
-}
-.switch input:checked + .slider:before {
-  transform: translateX(18px);
-}
-.moon-icon {
-  font-size: 1.2rem;
-  margin-right: 1rem;
-}
-.darkmode-switch-row {
-  margin-top: 0.3rem;
-  margin-right: 3rem;
-  border-radius: 0.375rem;
-}
-.icon-separated {
-  margin-right: 1rem;
-  min-width: 1.25rem;
-  text-align: center;
+.menu-panel .btn-primary:hover,
+.menu-panel .btn-primary:focus {
+  background-color: #0b5ed7 !important;
+  border-color: #0a58ca !important;
+  color: #fff !important;
 }
 </style>

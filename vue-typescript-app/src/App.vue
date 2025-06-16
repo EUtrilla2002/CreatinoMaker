@@ -649,30 +649,51 @@ function cancelUpload() {
 </script>
 
 <template>
-  
   <div id="app-main" class="App" @mousemove="handleMouseMove" @mouseup="handleMouseUp" style="width: 100vw; height: 100vh; position: relative; overflow: hidden;">
     <h1 style="text-align: center; margin-top: 1rem;">Creatino Maker</h1>
-    <Menu v-if="showMenu" :dark-mode="darkMode" style="position: absolute; bottom:270px; right: 390px; z-index: 1200;" @add-gadget="handleAddGadget" />
+    <Menu v-if="showMenu" :dark-mode="darkMode" style="position: absolute; bottom:480px; right: 460px; z-index: 1200;" @add-gadget="handleAddGadget" />
     <FileMenu v-if="showFile" style="position: absolute; top: 170px; right: 250px; z-index: 1000;" @file-action="onFileAction" />
     <WorkMenu v-if="showWork" style="position: absolute; top: 170px; left:100px; z-index: 1000;" @work-action="onWorkAction" />
+
     <!-- Pantalla save -->
-    <div v-if="showSave" class="modal-backdrop">
-      <div class="modal">
-        <h3>Introduce un nombre para el archivo:</h3>
-        <input v-model="filename" placeholder="board-state" />
-        <button @click="confirmDownload">Aceptar</button>
-        <button @click="cancelDownload">Cancelar</button>
+    <div class="modal fade show" tabindex="-1" style="display: block;" v-if="showSave" aria-modal="true" role="dialog">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Introduce un nombre para el archivo:</h5>
+            <button type="button" class="btn-close" @click="cancelDownload"></button>
+          </div>
+          <div class="modal-body">
+            <input v-model="filename" class="form-control" placeholder="board-state" />
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-primary" @click="confirmDownload">Aceptar</button>
+            <button class="btn btn-primary" @click="cancelDownload">Cancelar</button>
+          </div>
+        </div>
       </div>
     </div>
-    <!-- Pantalla upload-->
-    <div v-if="showUpload" class="modal-backdrop">
-      <div class="modal">
-        <h3>Sube un archivo JSON para cargar el estado:</h3>
-        <input type="file" @change="handleFileUpload" accept=".json" />
-        <button @click="confirmUpload">Aceptar</button>
-        <button @click="cancelUpload">Cancelar</button>
+    <div class="modal-backdrop fade show" v-if="showSave"></div>
+
+    <!-- Pantalla upload -->
+    <div class="modal fade show" tabindex="-1" style="display: block;" v-if="showUpload" aria-modal="true" role="dialog">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Sube un archivo JSON para cargar el estado:</h5>
+            <button type="button" class="btn-close" @click="cancelUpload"></button>
+          </div>
+          <div class="modal-body">
+            <input type="file" @change="handleFileUpload" accept=".json" class="form-control" />
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-primary" @click="confirmUpload">Aceptar</button>
+            <button class="btn btn-primary" @click="cancelUpload">Cancelar</button>
+          </div>
+        </div>
       </div>
     </div>
+    <div class="modal-backdrop fade show" v-if="showUpload"></div>
 
     <div ref="workspaceRef" style="width: 90%; height: 70%; border: 2px solid #ccc; position: relative; margin-bottom: 1rem; overflow: hidden;">
       <!-- Elementos de zoom -->
@@ -783,155 +804,148 @@ function cancelUpload() {
   </div>
 </template>
 
-<style scoped>
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.vue:hover {
-  filter: drop-shadow(0 0 2em #42b883aa);
-}
-
-.modal-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-}
-.modal {
-  background: #fff;              /* Fondo blanco */
-  color: #212529;                /* Texto oscuro */
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.10); /* Sombra suave */
-}
-/* Estilos claros por defecto */
+<style>
+/* --------- General --------- */
 #app-main {
-  background-color: #f8f9fa; /* Bootstrap bg-light */
-  color: #212529;            /* Bootstrap text-dark */
-}
-#app-main button {
-  background: #007bff;       /* Bootstrap primary */
-  color: #f7f7f7;
-  border: 1px solid #007bff;
-  border-radius: 0.25rem;
-  transition: background 0.2s, color 0.2s;
-  font-weight: 500;
-  padding: 0.5rem 1rem;
+  background-color: #f8f9fa;
+  color: #212529;
+  transition: background 0.3s, color 0.3s;
 }
 #app-main button,
-.menu-panel button,
-.modal button {
-  background: #007bff;       /* Bootstrap primary */
-  color: #f7f7f7;
-  border: 1px solid #007bff;
+#app-main .btn {
+  background: #0d6efd;
+  color: #fff;
+  border: 1px solid #0d6efd;
   border-radius: 0.25rem;
   transition: background 0.2s, color 0.2s;
   font-weight: 500;
   padding: 0.5rem 1rem;
-  font-size: 1.5rem !important;
-  padding: 0.6rem 1.2rem !important;
-  border-radius: 0.375rem !important;
-  min-width: 50px;
-  min-height: 50px;
-  box-sizing: border-box;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
 }
-#app-main button:hover {
-  background: #0056b3;       /* Bootstrap primary darken */
+#app-main button:hover,
+#app-main .btn:hover {
+  background: #0b5ed7;
   color: #fff;
 }
 #app-main input,
 #app-main select,
-#app-main textarea {
-  background: #e2e4e6;
-  color: #212529;
+#app-main textarea,
+#app-main .form-control {
+  background: #f8fafc;
+  color: #23272b;
   border: 1px solid #ced4da;
   border-radius: 0.25rem;
   padding: 0.375rem 0.75rem;
+  transition: background 0.2s, color 0.2s;
 }
-.menu-panel {
-  background: #fff;
-  color: #212529;
-  border-radius: 0.5rem;
-  box-shadow: 0 2px 16px rgba(0,0,0,0.15);
-  padding: 1rem;
-  min-width: 220px;
-  border: 1px solid #dee2e6;
-  font-size: 1rem;
-  z-index: 1200;
+
+/* --------- Bootstrap Modal --------- */
+.modal-content {
+  background-color: #fff !important;
+  color: #23272b !important;
+  border-radius: 0.7rem;
+  box-shadow: 0 8px 32px rgba(60,60,60,0.12);
 }
-.menu-panel button {
-  background: #f8f9fa;
-  color: #212529;
-  border: 1px solid #ced4da;
-  border-radius: 0.25rem;
-  margin-bottom: 0.5rem;
-  width: 100%;
-  text-align: left;
-  transition: background 0.2s;
-  font-weight: 500;
+.modal-backdrop {
+  background-color: #000 !important;
+  opacity: 0.5 !important;
 }
-.menu-panel button:hover {
-  background: #e2e6ea;
+.modal-footer .btn {
+  background-color: #0d6efd !important;
+  color: #fff !important;
+  border-color: #0d6efd !important;
 }
-/* Estilos dark-mode tipo BootstrapVue */
-.dark-mode {
-  background-color: #212529 !important; /* Bootstrap bg-dark */
-  color: #f8f9fa !important;            /* Bootstrap text-light */
+.modal-footer .btn:hover, 
+.modal-footer .btn:focus {
+  background-color: #0b5ed7 !important;
+  border-color: #0a58ca !important;
+  color: #fff !important;
 }
-.dark-mode button {
-  background: #007bff !important;       /* Bootstrap secondary dark */
-  color: #f8f9fa !important;
-  border-color: #454d55 !important;
-}
-.dark-mode button:hover {
-  background: #495057 !important;
+
+/* --------- Modo Oscuro --------- */
+.dark-mode,
+.dark-mode #app-main {
+  background-color: #181a1b !important;
   color: #f8f9fa !important;
 }
-.dark-mode input,
-.dark-mode select,
-.dark-mode textarea {
-  background: #343a40 !important;
+.dark-mode #app-main button,
+.dark-mode #app-main .btn {
+  background: #2563eb !important;
   color: #f8f9fa !important;
-  border-color: #454d55 !important;
+  border-color: #2563eb !important;
 }
-.dark-mode .menu-panel {
+.dark-mode #app-main button:hover,
+.dark-mode #app-main .btn:hover {
+  background: #1e40af !important;
+  color: #fff !important;
+}
+.dark-mode #app-main input,
+.dark-mode #app-main select,
+.dark-mode #app-main textarea,
+.dark-mode #app-main .form-control {
   background: #23272b !important;
   color: #f8f9fa !important;
-  border: 1px solid #343a40 !important;
-}
-.dark-mode .menu-panel button {
-  background: #343a40 !important;
-  color: #646464 !important;
-  border: 1px solid #454d55 !important;
-}
-.dark-mode .menu-panel button:hover {
-  background: #495057 !important;
-}
-.dark-mode .menu-panel .category-title {
-  color: #f8f9fa !important; /* Bootstrap text-light */
-}
-.dark-mode .modal {
-  background: #23272b !important;
-  color: #f8f9fa !important;
-}
-.dark-mode .modal input {
-  background: #343a40 !important;
-  color: #f8f9fa !important;
   border-color: #454d55 !important;
+}
+.dark-mode .modal-content {
+  background-color: #23272b !important;
+  color: #f8f9fa !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.32);
+}
+.dark-mode .modal-footer .btn {
+  background-color: #2563eb !important;
+  color: #fff !important;
+  border-color: #2563eb !important;
+}
+.dark-mode .modal-footer .btn:hover,
+.dark-mode .modal-footer .btn:focus {
+  background-color: #1e40af !important;
+  border-color: #1e40af !important;
+  color: #fff !important;
+} 
+.dark-mode .bg-white,
+.dark-mode .bg-light,
+.dark-mode .card,
+.dark-mode .border,
+.dark-mode .shadow-sm {
+  background-color: #23272b !important;
+  color: #f8f9fa !important;
+  border-color: #343a40 !important;
+}
+.dark-mode hr,
+.dark-mode .border,
+.dark-mode .modal-content {
+  border-color: #343a40 !important;
+}
+.dark-mode .form-check-input {
+  background-color: #23272b !important;
+  border-color: #495057 !important;
+}
+.dark-mode .form-check-input:checked {
+  background-color: #2563eb !important;
+  border-color: #2563eb !important;
+}
+.dark-mode ::placeholder,
+.dark-mode .form-control::placeholder {
+  color: #b0b3b8 !important;
+  opacity: 1;
+}
+.dark-mode .modal-footer .btn {
+  background-color: #2563eb !important;
+  color: #fff !important;
+  border-color: #2563eb !important;
+}
+.dark-mode .modal-footer .btn:hover,
+.dark-mode .modal-footer .btn:focus {
+  background-color: #1e40af !important;
+  border-color: #1e40af !important;
+  color: #fff !important;
+}
+
+/* Opcional: scrollbar */
+.dark-mode ::-webkit-scrollbar {
+  background: #23272b;
+}
+.dark-mode ::-webkit-scrollbar-thumb {
+  background: #343a40;
 }
 </style>

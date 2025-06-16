@@ -8,6 +8,11 @@ import { faTrash, faPalette, faRotate, faRightLeft, faMagnifyingGlassPlus, faMag
 import { faPlay} from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 
+// main.ts
+import 'bootstrap/dist/css/bootstrap.min.css'
+import 'bootstrap-vue-next/dist/bootstrap-vue-next.css'
+
+import './assets/main.scss'
 library.add(faTrash, faPalette, faRotate, faRightLeft, faMagnifyingGlassPlus, faMagnifyingGlassMinus, faBars, faPlay)
 library.add(faUpload, faDownload, faInfinity, faWrench, faRotateLeft,faRotateRight, faInfo, faMoon, faCirclePlus)
 

@@ -1,20 +1,21 @@
 <template>
-  <div class="menu-panel">
+  <div class="menu-panel" :class="{ 'bg-dark text-light': isDark }">
     <!-- Component List -->
     <div v-for="category in filteredCategories" :key="category.name" class="category-block">
-      <div class="category-title">{{ category.name }}</div>
+      <div class="category-title fw-bold fs-6 mb-1">{{ category.name }}</div>
+            <hr class="my-2" />
       <div class="category-divider"></div>
-      <div class="flex flex-col">
-        <button
-          v-for="item in category.items"
-          :key="item.label"
-          class="flex items-center px-4 py-2 hover:bg-gray-800 cursor-pointer w-full text-left bg-transparent border-0 focus:outline-none"
-          type="button"
-          @click="handleFile(item.label)"
-        >
-          <fa-icon :icon="item.icon" class="icon-separated" />
-          <span>{{ item.label }}</span>
-        </button>
+      <div class="flex-col">
+      <button
+        v-for="item in category.items"
+        :key="item.label"
+        class="btn btn-primary btn-80 d-flex align-items-center justify-content-center mb-1"
+        type="button"
+        @click="handleFile(item.label)"
+      >
+        <fa-icon :icon="item.icon" class="icon-separated" />
+        <span>{{ item.label }}</span>
+      </button>
       </div>
     </div>
   </div>
@@ -22,7 +23,7 @@
 
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed , onMounted, onBeforeUnmount} from 'vue'
 
 const emit = defineEmits(['file-action']);
 
@@ -76,10 +77,28 @@ const filteredCategories = computed(() => {
     items: cat.items.filter(item => item.label.toLowerCase().includes(search.value.toLowerCase())),
   })).filter(cat => cat.items.length > 0)
 })
+
+// Modo noche
+const isDark = ref(document.body.classList.contains('dark-mode') || document.querySelector('#app-main')?.classList.contains('dark-mode'))
+
+function updateDarkMode() {
+  isDark.value = document.body.classList.contains('dark-mode') || document.querySelector('#app-main')?.classList.contains('dark-mode')
+}
+
+onMounted(() => {
+  const observer = new MutationObserver(updateDarkMode)
+  observer.observe(document.body, { attributes: true, attributeFilter: ['class'] })
+  const appMain = document.querySelector('#app-main')
+  if (appMain) {
+    observer.observe(appMain, { attributes: true, attributeFilter: ['class'] })
+  }
+  // Limpieza
+  onBeforeUnmount(() => observer.disconnect())
+})
 </script>
 <style scoped>
 .w-80 {
-  width: 220px !important;
+  width: 80% !important;
   max-height: 300px;
   overflow-y: auto;
   background: #fff !important;           /* Bootstrap bg-white */
@@ -91,39 +110,37 @@ const filteredCategories = computed(() => {
   border: 1px solid #dee2e6;             /* Bootstrap border */
 }
 
-.bg-gray-900 {
-  background: #fff !important;
+.menu-panel {
+  width: 280px !important; /* o el ancho que prefieras */
+  max-height: 300px;
+  overflow-y: auto;
+  border-radius: 0.75rem;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+  padding: 0.75rem;
+  font-size: 1rem;
+  border: 1px solid #dee2e6;
 }
 
-button {
-  font-size: 1rem !important;
-  padding: 0.4rem 0.6rem;
-  border: 1px solid #ced4da;             /* Bootstrap border */
-  background: #f8f9fa;                   /* Bootstrap bg-light */
-  text-align: left;
-  color: #212529;                        /* Bootstrap text-dark */
-  width: 100%;
-  cursor: pointer;
+
+/* Botón azul, centrado, 80% ancho */
+.btn-80 {
+  width: 80% !important;
+  margin-left: auto;
+  margin-right: auto;
   display: flex;
-  align-items: center;
-  border-radius: 0.375rem;
-  margin-bottom: 0.3rem;
-  transition: background 0.2s, color 0.2s;
+  justify-content: center; /* Centra el contenido del botón */
 }
-
-button:hover {
-  background-color: #e2e6ea;             /* Bootstrap hover */
-  color: #212529;
-}
-
-.fa-icon {
-  margin-right: 0.5rem;
-}
-
 .flex-col {
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
+  align-items: center; /* Centra los botones en el modal */
+}
+
+.icon-separated, .fa-icon, .me-2 {
+  margin-right: 0.5rem;
+  min-width: 1.25rem;
+  text-align: center;
 }
 
 /* Switch slider styles */
@@ -174,10 +191,5 @@ button:hover {
   margin-top: 0.3rem;
   margin-right: 3rem;
   border-radius: 0.375rem;
-}
-.icon-separated {
-  margin-right: 1rem;
-  min-width: 1.25rem;
-  text-align: center;
 }
 </style>
