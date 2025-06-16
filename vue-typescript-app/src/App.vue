@@ -71,7 +71,7 @@ const connections = ref<Array<{
   stroke: string,
   strokeWidth: number
 }>>([]);
-
+// Código
 
 // const asmCode = ref([
 //       "addi a0, a0, 5",
@@ -105,11 +105,12 @@ const asmCode = ref([
       "addi a0, a0, -6",
       "addi a0, a0, 1000",
       "jal ra, 0x104",
-      "addi a0, a0, -994",
+      "addi a0, a0, -1000",
       "addi a0, a0, 6",
       "addi a1, a1, 0",
       "jal ra, 0x100", 
     ]);
+
 const draggingId = ref<string | null>(null)
 const offset = reactive({ x: 0, y: 0 })
 const svgRef = ref<SVGSVGElement | null>(null)
@@ -336,7 +337,7 @@ const runProgram = async () => {
 
       const cpu = new CPU(ram, 0);
       let prev_value = 0;
-      for (let i = 0; i < 30; i++) {
+      for (let i = 0; i < 50; i++) {
         const pcvalue = cpu.pc - prev_value;
         switch (pcvalue) {
           case 0x100:
@@ -584,7 +585,7 @@ function downloadState() {
   const state = {
     positions: positions.value,
     connections: connections.value,
-    boardDataMutable: boardDataMutable,
+    boardData: boardDataMutable.value, // <--- usa boardData aquí
     code: asmCode.value,
   };
   const json = JSON.stringify(state, null, 2);
@@ -622,7 +623,9 @@ function handleFileUpload(event) {
       console.log("Positions loaded:", positions.value);
 
       connections.value = parsed.connections || [];
-      boardDataMutable.value = parsed.boardData || {};
+      boardDataMutable.value = parsed.boardData && parsed.boardData.pins
+  ? parsed.boardData
+  : { ...boardData }; // <-- fallback al boardData original si falta pins
       asmCode.value = parsed.code || [];
 
       nextTick(() => {
