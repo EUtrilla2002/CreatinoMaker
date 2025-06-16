@@ -1,24 +1,22 @@
 <template>
-  <div ref="menuRef" class="w-56 bg-gray-900 text-white rounded shadow-lg p-2 relative" style="z-index: 1000;">
-    <div
-      v-for="category in filteredCategories"
-      :key="category.name"
-      class="mb-2"
-    >
-      <div class="font-bold text-md mb-1">{{ category.name }}</div>
-      <div class="border-b border-gray-600 mb-2"></div>
-      <div class="flex flex-row flex-wrap gap-1">
-        <button class="close-button" @click="$emit('close')">✖️</button>
+    <div class="menu-panel bg-white border rounded-3 shadow-sm p-3" :class="{ 'bg-dark text-light': isDark }" style="width:220px;max-height:300px;overflow-y:auto;">
+    <div v-for="category in filteredCategories" :key="category.name" class="mb-2">
+      <div class="d-flex align-items-center justify-content-between mb-1">
+        <span class="fw-bold fs-6">{{ category.name }}</span>
+        <button class="btn btn-sm p-0 border-0 bg-transparent ms-2" @click="$emit('close')">&times;</button>
+      </div>
+      <hr class="my-2" />
+      <div class="d-flex flex-row gap-2 align-items-center">
         <button
           v-for="item in category.items"
           :key="item.label"
           :ref="item.label === 'Color' ? setColorButtonRef : null"
-          class="flex items-center px-2 py-1 hover:bg-gray-800 cursor-pointer text-left bg-transparent border-0 focus:outline-none rounded text-sm"
-          :class="{ 'bg-gray-700': selectedItem === item.label }"
+          class="btn btn-light d-flex align-items-center me-2 mb-1"
+          :class="{ active: selectedItem === item.label }"
           type="button"
           @click="onItemClick(item.label)"
         >
-          <fa-icon :icon="item.icon" class="mr-1" />
+          <fa-icon :icon="item.icon" class="me-2" />
           <span>{{ item.label }}</span>
         </button>
       </div>
@@ -30,16 +28,14 @@
       :modelValue="selectedColor"
       :position="popupPosition"
       :width="menuWidth"
-      @update:lineValue="onColorChange"
+      @update:modelValue="onColorChange"
       @close="selectedItem = null"
     />
-
   </div>
 </template>
 
-
 <script setup lang="ts">
-import { ref, computed, nextTick ,onMounted, } from 'vue'
+import { ref, computed, nextTick, onMounted , onBeforeUnmount} from 'vue'
 import ColorPickerPopup from './ColorSelection.vue'
 
 const menuRef = ref<HTMLElement | null>(null)
@@ -64,48 +60,35 @@ const props = defineProps({
     type: [String, Number],
     required: true,
   },
-  // otros props...
 })
 
 const filteredCategories = computed(() => categories.value)
 
 const colorButtonRef = ref<HTMLElement | null>(null)
-
 const setColorButtonRef = (el: HTMLElement | null) => {
   if (el) colorButtonRef.value = el
 }
 
-
 const onItemClick = async (label: string) => {
-  // Solo una vez, para alternar el estado
   selectedItem.value = selectedItem.value === label ? null : label
-  
-  console.log('Item clicked:', label)
-
   if (label === 'Color' && selectedItem.value === 'Color') {
     await nextTick()
     const buttonEl = colorButtonRef.value
-    console.log('Color selectedItem value:', selectedItem.value)
-    console.log('selectedItem === "Color"?', selectedItem.value === 'Color')
     if (buttonEl) {
       const rect = buttonEl.getBoundingClientRect()
       popupPosition.value = {
-        x: rect.right -150,
-        y: rect.top +80,
+        x: rect.right - 150,
+        y: rect.top + 80,
       }
-      console.log('Popup position set to:', popupPosition.value)
     }
   }
-
   if (label === 'Delete') {
-    console.log('Delete action triggered in', props.editingLineId)
     emit('delete', props.editingLineId)
     return
   }
 }
 const onColorChange = (color: string) => {
   selectedColor.value = color
-  console.log('Update:',color)
   emit('update:lineValue', color) 
 }
 
@@ -118,83 +101,56 @@ onMounted(() => {
     }
   })
 })
+
+// Detecta modo oscuro por clase en body o app
+const isDark = ref(document.body.classList.contains('dark-mode') || document.querySelector('#app-main')?.classList.contains('dark-mode'))
+
+function updateDarkMode() {
+  isDark.value = document.body.classList.contains('dark-mode') || document.querySelector('#app-main')?.classList.contains('dark-mode')
+}
+
+onMounted(() => {
+  const observer = new MutationObserver(updateDarkMode)
+  observer.observe(document.body, { attributes: true, attributeFilter: ['class'] })
+  const appMain = document.querySelector('#app-main')
+  if (appMain) {
+    observer.observe(appMain, { attributes: true, attributeFilter: ['class'] })
+  }
+  // Limpieza
+  onBeforeUnmount(() => observer.disconnect())
+})
 </script>
 
-
 <style scoped>
-.w-80 {
+.menu-panel {
   width: 240px !important;
   min-height: 150px;
-  background: #2d2d2d !important;
+  background: #fff !important;
   border-radius: 1rem;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.10);
   padding: 1rem;
-  font-size: 0.8rem;
-  z-index: 1000000;
-}
-
-.bg-gray-900 {
-  background: #2d2d2d !important;
-}
-
-.category-title {
-  font-weight: bold;
   font-size: 1rem;
-  padding: 0.5rem 1rem 0.25rem 1rem;
+  z-index: 1000000;
+  color: #212529;
+  border: 1px solid #dee2e6;
 }
-
-.category-divider {
-  border-bottom: 1px solid #444;
-  margin: 0 1rem 0.5rem 1rem;
+/* .menu-panel .btn-light {
+  background: #f8f9fa !important;
+  color: #212529 !important;
+  border: 1px solid #ced4da !important;
+  font-size: 1rem !important;
+  border-radius: 0.375rem;
+  transition: background 0.2s, color 0.2s;
+  padding: 0.4rem 0.6rem;
 }
-
-button.bg-gray-700 {
-  background-color: #444 !important;
+.menu-panel .btn-light.active,
+.menu-panel .btn-light:active {
+  background-color: #e2e6ea !important;
+  color: #212529 !important;
 }
-
-button:hover {
-  background-color: #555 !important;
-}
-
-.flex {
-  display: flex;
-}
-
-.flex-col {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-}
-
-.ml-4 {
-  margin-left: 1rem;
-}
-
-.p-4 {
-  padding: 1rem;
-}
-
-.w-60 {
-  width: 15rem;
-}
-.close-button {
-  position: absolute;
-  top: 5px;
-  right: 2px;
-  background: transparent;
-  border: none;
-  font-size: 12px;       /* Más pequeño */
-  padding: 0 4px;         /* Un poco de margen horizontal */
+.menu-panel .btn-outline-secondary {
+  padding: 0 6px;
+  font-size: 0.9rem;
   line-height: 1;
-  cursor: pointer;
-  color: #aaa;            /* Color más suave */
-  opacity: 0.6;
-  transition: opacity 0.2s ease;
-}
-
-.close-button:hover {
-  opacity: 1;
-  color: #555;
-}
-
+} */
 </style>

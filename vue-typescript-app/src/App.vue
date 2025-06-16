@@ -1,3 +1,24 @@
+<!-- 
+/*  CREATino Maker-App
+ *  Copyright 2018-2025 Felix Garcia Carballeira, Diego Camarmas Alonso, Alejandro Calderon Mateos, Elisa Utrilla Arroyo
+ *
+ *  file is part of CREATOR.
+ *
+ *  CREATOR is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  CREATOR is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public License
+ *  along with CREATOR.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */ -->
+
 <script setup lang="ts">
 import { ref, reactive, watch, nextTick, onMounted, computed , onBeforeUnmount} from 'vue'
 import BoardElement from './components/BoardElements/BoardElement.vue';
@@ -9,9 +30,14 @@ import ConnectionsLines from './components/Gadgets/Lines.vue';
 import Menu from './components/Gadgets/GadgetMenu.vue';
 import LEDComponent from './components/Gadgets/Elements/LED.vue';
 import FileMenu from './components/Gadgets/Elements/ConfigFile.vue';
+import WorkMenu from './components/Gadgets/Elements/ConfigWork.vue';
 
 const workspaceRef = ref<HTMLDivElement | null>(null);
 const boardDataMutable = ref({ ...boardData });
+
+/// -----------UNDO y REDO
+const undoStack = ref<Array<{ positions: typeof positions.value, connections: typeof connections.value }>>([]);
+const redoStack = ref<Array<{ positions: typeof positions.value, connections: typeof connections.value }>>([]);
 
 
 const compState = ref(true);
@@ -96,6 +122,7 @@ const filename = ref('board-state');
 const SCALE= ref(2); // empieza en 1x
 
 function handleMouseDown(e: MouseEvent, id: string) {
+  saveStateForUndo() 
   draggingId.value = id;
   const element = positions.value.find(item => item.id === id);
   if (!element) return;
@@ -154,6 +181,7 @@ function handleMouseMove(e: MouseEvent) {
   }
 }
 function handleAddGadget(type: string) {
+  saveStateForUndo() 
   if (type === 'LED') {
     const id = `led-${Date.now()}-${Math.random()}`;
     console.log("Adding LED with ID:", id);
@@ -171,6 +199,7 @@ function handleAddGadget(type: string) {
   }
 }
 function handleLedStateChange(id: string, state: { flipped: boolean; rotation: number ,color: string}) {
+  saveStateForUndo() 
   const led = positions.value.find(item => item.id === id);
   if (led) {
     led.flipped = state.flipped;
@@ -180,10 +209,12 @@ function handleLedStateChange(id: string, state: { flipped: boolean; rotation: n
   }
 }
 function removeLed(id: string) {
+  saveStateForUndo() 
   positions.value = positions.value.filter(item => item.id !== id)
   connections.value = connections.value.filter(conn =>
   !conn.fromPinId.startsWith(id) && !conn.toPinId.startsWith(id)
 )
+
 }
 function removeLine(id) {
   console.log("Removing line with ID:", id);
@@ -380,7 +411,7 @@ onMounted(() => {
   });
 });
 
-watch(() => boardDataMutable.pins, () => {
+watch(() => boardDataMutable.value.pins, () => {
   nextTick(() => {
     setupPinListeners();
   });
@@ -398,20 +429,46 @@ function setupFile() {
   showFile.value = !showFile.value; 
 }
 
+// Workspace button
+
+// Pantalla work
+
+const showWork = ref(false);
+function setupWork() {
+  showWork.value = !showWork.value; 
+}
+
 function clearConnections() {
-  connections.value = [];
+  const shouldClear = window.confirm("¿Estás seguro de que quieres borrar todas las conexiones?");
+  if (!shouldClear) {
+    return;
+  }
+
+  // 2. Restaurar color de los pines en el SVG
   if (svgRef.value) {
     const group = svgRef.value.svgEl.querySelector<SVGElement>('#g147');
-    if (group) {
+    if (group && boardDataMutable.value?.pins) {
       const pins = group.querySelectorAll<SVGElement>('[id]');
       pins.forEach(el => {
         const pinId = el.id;
-        if ((boardDataMutable.pins as string[]).includes(pinId)) {
+        if ((boardDataMutable.value.pins as string[]).includes(pinId)) {
           el.setAttribute("fill", "#ffd700");
         }
       });
     }
   }
+
+  // 3. Eliminar LEDs que estaban conectados
+  positions.value = positions.value.filter(component => {
+    // Si es un LED, lo eliminamos si hay alguna conexión cuyo id contenga el id del LED
+    if (component.id.startsWith('led-')) {
+      return !connections.value.some(conn => conn.id.includes(component.id));
+    }
+    return true; // mantener si no es LED
+  });
+  connections.value = [];
+
+  // 4. Resetear selección
   selectedPin.value = null;
 }
 
@@ -425,7 +482,83 @@ function zoomOut() {
   if (SCALE.value < 1) SCALE.value = 1; // Limitar a 2x
   updateConnectionsPositions();
 }
+function onWorkAction(action) {
+  switch(action){
+    case 'zoomin': zoomIn(); break;
+    case 'zoomout': zoomOut(); break;
+    case 'clean': 
+      clearConnections(); 
+      break;
+    case 'undo': 
+      undo(); 
+      break;
+    case 'redo': 
+      redo(); 
+      break;
+    case 'dark': 
+      changeDarkMode(); 
+      break;  
+  }
+}
+function saveStateForUndo() {
+  // Guarda una copia profunda del estado actual
+  undoStack.value.push({
+    positions: JSON.parse(JSON.stringify(positions.value)),
+    connections: JSON.parse(JSON.stringify(connections.value)),
+  });
+  // Limita el tamaño del stack si quieres
+  if (undoStack.value.length > 50) undoStack.value.shift();
+}
 
+function undo() {
+  if (undoStack.value.length === 0) return;
+  // Guarda el estado actual en el redoStack antes de deshacer
+  redoStack.value.push({
+    positions: JSON.parse(JSON.stringify(positions.value)),
+    connections: JSON.parse(JSON.stringify(connections.value)),
+  });
+  const prevState = undoStack.value.pop();
+  if (prevState) {
+    positions.value = JSON.parse(JSON.stringify(prevState.positions));
+    connections.value = JSON.parse(JSON.stringify(prevState.connections));
+    updateConnectionsPositions();
+  }
+}
+function redo() {
+  if (redoStack.value.length === 0) return;
+  // Guarda el estado actual en el undoStack antes de rehacer
+  undoStack.value.push({
+    positions: JSON.parse(JSON.stringify(positions.value)),
+    connections: JSON.parse(JSON.stringify(connections.value)),
+  });
+  const nextState = redoStack.value.pop();
+  if (nextState) {
+    positions.value = JSON.parse(JSON.stringify(nextState.positions));
+    connections.value = JSON.parse(JSON.stringify(nextState.connections));
+    updateConnectionsPositions();
+  }
+}
+
+const darkMode = ref(false);
+
+function changeDarkMode() {
+  darkMode.value = !darkMode.value;
+  const app = document.getElementById('app-main');
+  if (darkMode.value) {
+    app?.classList.add('dark-mode');
+    localStorage.setItem("conf_dark_mode", "on");
+  } else {
+    app?.classList.remove('dark-mode');
+    localStorage.setItem("conf_dark_mode", "off");
+  }
+}
+onMounted(() => {
+  const app = document.getElementById('app-main');
+  if (localStorage.getItem("conf_dark_mode") === "on") {
+    darkMode.value = true;
+    app?.classList.add('dark-mode');
+  }
+});
 // Pantalla archivos
 function onFileAction(action) {
   if (action === 'save') {
@@ -516,38 +649,63 @@ function cancelUpload() {
 </script>
 
 <template>
-  
-  <div class="App" @mousemove="handleMouseMove" @mouseup="handleMouseUp" style="width: 100vw; height: 100vh; position: relative; overflow: hidden;">
+  <div id="app-main" class="App" @mousemove="handleMouseMove" @mouseup="handleMouseUp" style="width: 100vw; height: 100vh; position: relative; overflow: hidden;">
     <h1 style="text-align: center; margin-top: 1rem;">Creatino Maker</h1>
-    <Menu v-if="showMenu" style="position: absolute; bottom:270px; right: 390px; z-index: 1200;" @add-gadget="handleAddGadget" />
+    <Menu v-if="showMenu" :dark-mode="darkMode" style="position: absolute; bottom:480px; right: 460px; z-index: 1200;" @add-gadget="handleAddGadget" />
     <FileMenu v-if="showFile" style="position: absolute; top: 170px; right: 250px; z-index: 1000;" @file-action="onFileAction" />
+    <WorkMenu v-if="showWork" style="position: absolute; top: 170px; left:100px; z-index: 1000;" @work-action="onWorkAction" />
+
     <!-- Pantalla save -->
-    <div v-if="showSave" class="modal-backdrop">
-      <div class="modal">
-        <h3>Introduce un nombre para el archivo:</h3>
-        <input v-model="filename" placeholder="board-state" />
-        <button @click="confirmDownload">Aceptar</button>
-        <button @click="cancelDownload">Cancelar</button>
+    <div class="modal fade show" tabindex="-1" style="display: block;" v-if="showSave" aria-modal="true" role="dialog">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Introduce un nombre para el archivo:</h5>
+            <button type="button" class="btn-close" @click="cancelDownload"></button>
+          </div>
+          <div class="modal-body">
+            <input v-model="filename" class="form-control" placeholder="board-state" />
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-primary" @click="confirmDownload">Aceptar</button>
+            <button class="btn btn-primary" @click="cancelDownload">Cancelar</button>
+          </div>
+        </div>
       </div>
     </div>
-    <!-- Pantalla upload-->
-    <div v-if="showUpload" class="modal-backdrop">
-      <div class="modal">
-        <h3>Sube un archivo JSON para cargar el estado:</h3>
-        <input type="file" @change="handleFileUpload" accept=".json" />
-        <button @click="confirmUpload">Aceptar</button>
-        <button @click="cancelUpload">Cancelar</button>
+    <div class="modal-backdrop fade show" v-if="showSave"></div>
+
+    <!-- Pantalla upload -->
+    <div class="modal fade show" tabindex="-1" style="display: block;" v-if="showUpload" aria-modal="true" role="dialog">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Sube un archivo JSON para cargar el estado:</h5>
+            <button type="button" class="btn-close" @click="cancelUpload"></button>
+          </div>
+          <div class="modal-body">
+            <input type="file" @change="handleFileUpload" accept=".json" class="form-control" />
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-primary" @click="confirmUpload">Aceptar</button>
+            <button class="btn btn-primary" @click="cancelUpload">Cancelar</button>
+          </div>
+        </div>
       </div>
     </div>
+    <div class="modal-backdrop fade show" v-if="showUpload"></div>
 
     <div ref="workspaceRef" style="width: 90%; height: 70%; border: 2px solid #ccc; position: relative; margin-bottom: 1rem; overflow: hidden;">
       <!-- Elementos de zoom -->
       <div style="position: absolute; top: 20px; left: 20px; z-index: 1100; display: flex; flex-direction: column;">
-        <button @click="zoomIn" style="font-size: 2rem; padding: 0.75rem 1.5rem; margin-bottom: 0.5rem;" id="menu-btn">
+        <!-- <button @click="zoomIn" style="font-size: 2rem; padding: 0.75rem 1.5rem; margin-bottom: 0.5rem;" id="menu-btn">
           <fa-icon :icon="['fas', 'magnifying-glass-plus']" style="width: 1em; height: 1em; color: white;" />
         </button>
         <button @click="zoomOut" style="font-size: 2rem; padding: 0.75rem 1.5rem;" id="menu-btn">
           <fa-icon :icon="['fas', 'magnifying-glass-minus']" style="width: 1em; height: 1em; color: white;" />
+        </button> -->
+        <button @click="setupWork" style="font-size: 2rem; padding: 0.75rem 1.5rem; margin-bottom: 0.5rem;" id="work-btn">
+          <fa-icon :icon="['fas', 'wrench']" style="width: 1em; height: 1em; color: white;" />
         </button>
       </div>
       <div style="position: absolute; top: 20px; right: 20px; z-index: 1100; display: flex; flex-direction: column;">
@@ -559,13 +717,15 @@ function cancelUpload() {
       <div style="position: absolute; bottom: 20px; right: 20px; z-index: 1100;">
         <!-- Botones del fondo -->
         <div style="position: relative; display: inline-block;">
-          <button @click="setupMenu" id="plus-btn" style="font-size: 2rem; padding: 0.75rem 1.5rem; margin-right: 0.5rem;">+</button>
+          <button @click="setupMenu" id="plus-btn" style="font-size: 1.5rem; padding: 0.75rem 1.5rem; margin-right: 0.5rem;">
+            <fa-icon :icon="['fas', 'circle-plus']" style="width: 1em; height: 1em; color: white;" />
+          </button>
           <button @click="runProgram" style="font-size: 1.5rem; padding: 0.75rem 1.5rem; margin-right: 0.5rem;">
             <fa-icon :icon="['fas', 'play']" style="width: 1em; height: 1em; color: white;" />
           </button>
-          <button @click="clearConnections" style="font-size: 1.5rem; padding: 0.75rem 1.5rem;">
+          <!-- <button @click="clearConnections" style="font-size: 1.5rem; padding: 0.75rem 1.5rem;">
             <fa-icon :icon="['fas', 'trash']" style="width: 1em; height: 1em; color: white;" />
-          </button>
+          </button> -->
           <!-- <button @click="handleAddGadget('LED')" style="position: absolute; top: -80px; left: 10px;">Añadir LED</button> -->
 
         </div>
@@ -644,35 +804,148 @@ function cancelUpload() {
   </div>
 </template>
 
-<style scoped>
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
+<style>
+/* --------- General --------- */
+#app-main {
+  background-color: #f8f9fa;
+  color: #212529;
+  transition: background 0.3s, color 0.3s;
 }
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
+#app-main button,
+#app-main .btn {
+  background: #0d6efd;
+  color: #fff;
+  border: 1px solid #0d6efd;
+  border-radius: 0.25rem;
+  transition: background 0.2s, color 0.2s;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
 }
-.logo.vue:hover {
-  filter: drop-shadow(0 0 2em #42b883aa);
+#app-main button:hover,
+#app-main .btn:hover {
+  background: #0b5ed7;
+  color: #fff;
+}
+#app-main input,
+#app-main select,
+#app-main textarea,
+#app-main .form-control {
+  background: #f8fafc;
+  color: #23272b;
+  border: 1px solid #ced4da;
+  border-radius: 0.25rem;
+  padding: 0.375rem 0.75rem;
+  transition: background 0.2s, color 0.2s;
 }
 
-.modal-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
+/* --------- Bootstrap Modal --------- */
+.modal-content {
+  background-color: #fff !important;
+  color: #23272b !important;
+  border-radius: 0.7rem;
+  box-shadow: 0 8px 32px rgba(60,60,60,0.12);
 }
-.modal {
-  background: rgb(39, 35, 35);
-  padding: 20px;
-  border-radius: 8px;
+.modal-backdrop {
+  background-color: #000 !important;
+  opacity: 0.5 !important;
+}
+.modal-footer .btn {
+  background-color: #0d6efd !important;
+  color: #fff !important;
+  border-color: #0d6efd !important;
+}
+.modal-footer .btn:hover, 
+.modal-footer .btn:focus {
+  background-color: #0b5ed7 !important;
+  border-color: #0a58ca !important;
+  color: #fff !important;
+}
+
+/* --------- Modo Oscuro --------- */
+.dark-mode,
+.dark-mode #app-main {
+  background-color: #181a1b !important;
+  color: #f8f9fa !important;
+}
+.dark-mode #app-main button,
+.dark-mode #app-main .btn {
+  background: #2563eb !important;
+  color: #f8f9fa !important;
+  border-color: #2563eb !important;
+}
+.dark-mode #app-main button:hover,
+.dark-mode #app-main .btn:hover {
+  background: #1e40af !important;
+  color: #fff !important;
+}
+.dark-mode #app-main input,
+.dark-mode #app-main select,
+.dark-mode #app-main textarea,
+.dark-mode #app-main .form-control {
+  background: #23272b !important;
+  color: #f8f9fa !important;
+  border-color: #454d55 !important;
+}
+.dark-mode .modal-content {
+  background-color: #23272b !important;
+  color: #f8f9fa !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.32);
+}
+.dark-mode .modal-footer .btn {
+  background-color: #2563eb !important;
+  color: #fff !important;
+  border-color: #2563eb !important;
+}
+.dark-mode .modal-footer .btn:hover,
+.dark-mode .modal-footer .btn:focus {
+  background-color: #1e40af !important;
+  border-color: #1e40af !important;
+  color: #fff !important;
+} 
+.dark-mode .bg-white,
+.dark-mode .bg-light,
+.dark-mode .card,
+.dark-mode .border,
+.dark-mode .shadow-sm {
+  background-color: #23272b !important;
+  color: #f8f9fa !important;
+  border-color: #343a40 !important;
+}
+.dark-mode hr,
+.dark-mode .border,
+.dark-mode .modal-content {
+  border-color: #343a40 !important;
+}
+.dark-mode .form-check-input {
+  background-color: #23272b !important;
+  border-color: #495057 !important;
+}
+.dark-mode .form-check-input:checked {
+  background-color: #2563eb !important;
+  border-color: #2563eb !important;
+}
+.dark-mode ::placeholder,
+.dark-mode .form-control::placeholder {
+  color: #b0b3b8 !important;
+  opacity: 1;
+}
+.dark-mode .modal-footer .btn {
+  background-color: #2563eb !important;
+  color: #fff !important;
+  border-color: #2563eb !important;
+}
+.dark-mode .modal-footer .btn:hover,
+.dark-mode .modal-footer .btn:focus {
+  background-color: #1e40af !important;
+  border-color: #1e40af !important;
+  color: #fff !important;
+}
+
+/* Opcional: scrollbar */
+.dark-mode ::-webkit-scrollbar {
+  background: #23272b;
+}
+.dark-mode ::-webkit-scrollbar-thumb {
+  background: #343a40;
 }
 </style>
