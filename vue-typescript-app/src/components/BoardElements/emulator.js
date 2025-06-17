@@ -4,16 +4,24 @@ import boardData from "./esp32c3.json";
 const sleep = (delay) => new Promise((resolve) => setTimeout(resolve, delay));
 
 const hookMap = {
-  0x100: function cr_digitalWrite(cpu, connections, setLedState) {
+  0x100: function cr_digitalWrite(cpu, connections, setLedState, boardElementRef) {
     const pin = cpu.registerSet.getRegister(10); // a0
     const value = cpu.registerSet.getRegister(11); // a1
     console.log(`cr_digitalWrite invoked! pin: ${pin}, value: ${value}`);
     const GPIOpin = "GPIO" + pin;
     console.log(GPIOpin);
     // Lógica de funcionamiento
+          //setLedState(value);
+    if (GPIOpin == 'GPIO8'){
+        console.log("Here")
+        if (boardElementRef && boardElementRef.value && typeof boardElementRef.value.setGPIO8State === 'function') {
+          boardElementRef.value.setGPIO8State(!!value);
+        } else {
+          console.warn('No se pudo acceder a setGPIO8State');
+        }
+      }
+
     if (boardData.pins.includes(GPIOpin)) {
-      //setLedState(value);
-      if (GPIOpin != 'GPIO8'){ //InsidePin
         console.log(connections);
         // Lógica de conexion: patita izq en el GND y patita drcha en un GPIO
         console.log(connections)
@@ -53,7 +61,6 @@ const hookMap = {
           console.log("Not connected");
         }
 
-      }
       
     }
     cpu.pc = cpu.registerSet.getRegister(1); // ret

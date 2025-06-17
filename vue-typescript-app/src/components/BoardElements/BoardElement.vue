@@ -39,11 +39,24 @@ onMounted(() => {
   }
 })
 
+// Estado para el círculo GPIO8
+const gpio8Active = ref(false)
+
+function setGPIO8State(state: boolean) {
+  gpio8Active.value = state
+}
+
+
+// Función para alternar el estado
+function toggleGPIO8() {
+  gpio8Active.value = !gpio8Active.value
+}
 // Exponer referencias para que el padre pueda acceder
 defineExpose({
   svgEl,
   elementsGndGpio,
-  svgRef
+  svgRef,
+  setGPIO8State 
 })
 
 // Función para manejar el evento mousedown
@@ -59,13 +72,6 @@ function handleRotate() {
   emit('updateBoard', {rotation: (rotation.value + 90) % 360})
 }
 
-// Estado para el círculo GPIO8
-const gpio8Active = ref(false)
-
-// Función para alternar el estado
-function toggleGPIO8() {
-  gpio8Active.value = !gpio8Active.value
-}
 
 
 

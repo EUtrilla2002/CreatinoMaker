@@ -74,18 +74,18 @@ const connections = ref<Array<{
 // Código
 
 const asmCode = ref([
-      "addi a0, a0, 5",
+      "addi a0, a0, 8",
       "addi a1, a1, 1",
       "jal ra, 0x100",
-      "addi a0, a0, -5",
+      "addi a0, a0, -8",
       "addi a0, a0, 1000",
       "jal ra, 0x104",
       "addi a0, a0, -1000",
-      "addi a0, a0, 5",
+      "addi a0, a0, 8",
       "addi a1, a1, -1",
-      "addi a1, a1, 0",
       "jal ra, 0x100",
-      "addi t1, t1, 2",
+
+
     ]);
 // const asmCode = ref([
 //       "addi a0, a0, 5",
@@ -367,7 +367,7 @@ const runProgram = async () => {
         const pcvalue = cpu.pc - prev_value;
         switch (pcvalue) {
           case 0x100:
-            hookMap[0x100](cpu, connections.value, (val) => (compState.value = val));
+            hookMap[0x100](cpu, connections.value, (val) => (compState.value = val),svgRef);
             prev_value = cpu.pc;
             break;
           case 0x104:
