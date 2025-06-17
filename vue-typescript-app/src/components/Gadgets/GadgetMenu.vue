@@ -47,7 +47,7 @@ const categories = ref([
     name: 'Basic',
     items: [
       { label: 'LED', icon: '/icons/led.svg'  },
-      { label: 'Button', icon: '/icons/pushbutton.png' },
+      { label: 'BUTTON', icon: '/icons/button.svg' },
       { label: 'Servo', icon: '/icons/pushbutton6mm.png' },
     ],
   },

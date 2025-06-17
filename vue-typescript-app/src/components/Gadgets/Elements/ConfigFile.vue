@@ -5,7 +5,7 @@
       <div class="category-title fw-bold fs-6 mb-1">{{ category.name }}</div>
       <hr class="my-2" />
       <div class="category-divider"></div>
-      <div class="flex-col">
+      <div class="flex-col" style="position: relative;">
         <button
           v-for="item in category.items"
           :key="item.label"
@@ -17,20 +17,21 @@
           <span>{{ item.label }}</span>
         </button>
         <!-- Dropdown para archivos de ejemplo -->
-        <div
-          v-if="showExamplesDropdown"
-          class="dropdown-menu show"
-          style="position: relative; width: 100%; z-index: 1000;"
+      <div
+        v-if="showExamplesDropdown"
+          class="dropdown-menu show category-block w-100"
+          :class="{ 'bg-dark text-light': isDark }"
+          style="position: absolute; left: 0; top: 100%; width: 100%; z-index: 2000; box-shadow: 0 4px 16px rgba(0,0,0,0.2);"
+      >
+        <button
+          v-for="example in exampleFiles"
+          :key="example.file"
+          class="btn btn-primary btn-80 d-flex align-items-center justify-content-center mb-1"
+          type="button"
+          @click="handleExampleFile(example.file)"
         >
-          <button
-            v-for="example in exampleFiles"
-            :key="example.file"
-            class="dropdown-item"
-            type="button"
-            @click="handleExampleFile(example.file)"
-          >
-            {{ example.label }}
-          </button>
+          {{ example.label }}
+        </button>
         </div>
       </div>
     </div>
@@ -73,7 +74,7 @@ const categories = ref([
 ])
 const exampleFiles = [
   { label: 'Semaphore', file: 'examples/semaphore.json' },
-  // { label: 'Blink', file: 'blink.json' },
+  { label: 'Blink', file: 'examples/blink.json' },
   // { label: 'Contador', file: 'counter.json' }
 ]
 const showExamplesDropdown = ref(false)

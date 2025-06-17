@@ -29,6 +29,7 @@ import boardData from './components/BoardElements/esp32c3.json';
 import ConnectionsLines from './components/Gadgets/Lines.vue';
 import Menu from './components/Gadgets/GadgetMenu.vue';
 import LEDComponent from './components/Gadgets/Elements/LED.vue';
+import ButtonComponent from './components/Gadgets/Elements/Button.vue'; 
 import FileMenu from './components/Gadgets/Elements/ConfigFile.vue';
 import WorkMenu from './components/Gadgets/Elements/ConfigWork.vue';
 
@@ -73,43 +74,43 @@ const connections = ref<Array<{
 }>>([]);
 // Código
 
+// const asmCode = ref([
+//       "addi a0, a0, 8",
+//       "addi a1, a1, 1",
+//       "jal ra, 0x100",
+//       "addi a0, a0, -8",
+//       "addi a0, a0, 1000",
+//       "jal ra, 0x104",
+//       "addi a0, a0, -1000",
+//       "addi a0, a0, 8",
+//       "addi a1, a1, -1",
+//       "jal ra, 0x100",
+
+
+//     ]);
 const asmCode = ref([
-      "addi a0, a0, 8",
+      "addi a0, a0, 5",
       "addi a1, a1, 1",
       "jal ra, 0x100",
-      "addi a0, a0, -8",
+      "addi a0, a0, -5",
       "addi a0, a0, 1000",
       "jal ra, 0x104",
       "addi a0, a0, -1000",
-      "addi a0, a0, 8",
+      "addi a0, a0, 5",
       "addi a1, a1, -1",
+      "addi a1, a1, 0",
       "jal ra, 0x100",
-
-
+      "addi a0, a0, 1",
+      "addi a1, a1, 1",
+      "jal ra, 0x100",      
+      "addi a0, a0, -6",
+      "addi a0, a0, 1000",
+      "jal ra, 0x104",
+      "addi a0, a0, -1000",
+      "addi a0, a0, 6",
+      "addi a1, a1, 0",
+      "jal ra, 0x100", 
     ]);
-// const asmCode = ref([
-//       "addi a0, a0, 5",
-//       "addi a1, a1, 1",
-//       "jal ra, 0x100",
-//       "addi a0, a0, -5",
-//       "addi a0, a0, 1000",
-//       "jal ra, 0x104",
-//       "addi a0, a0, -1000",
-//       "addi a0, a0, 5",
-//       "addi a1, a1, -1",
-//       "addi a1, a1, 0",
-//       "jal ra, 0x100",
-//       "addi a0, a0, 1",
-//       "addi a1, a1, 1",
-//       "jal ra, 0x100",      
-//       "addi a0, a0, -6",
-//       "addi a0, a0, 1000",
-//       "jal ra, 0x104",
-//       "addi a0, a0, -1000",
-//       "addi a0, a0, 6",
-//       "addi a1, a1, 0",
-//       "jal ra, 0x100", 
-//     ]);
 
 const draggingId = ref<string | null>(null)
 const offset = reactive({ x: 0, y: 0 })
@@ -196,7 +197,17 @@ function handleAddGadget(type: string) {
 
     });
     console.log(positions.value.length);
-
+  }
+    if (type === 'BUTTON') {
+    const id = `button-${Date.now()}-${Math.random()}`;
+    positions.value.push({
+      id,
+      position: { x: 200 + positions.value.length * 40, y: 200 },
+      compState: false,
+      flipped: false,
+      rotation: 0,
+      color: 'gray'
+    });
   }
 }
 function handleLedStateChange(id: string, state: { flipped: boolean; rotation: number ,color: string}) {
@@ -850,6 +861,20 @@ function handleUpdateBoardData(newBoardData) {
             if (el) ledRefs[led.id] = el;
             else delete ledRefs[led.id];
           }"
+        />
+        <ButtonComponent
+          v-for="button in positions.filter(item => item.id.startsWith('button-'))"
+          :id="button.id"
+          :position="button.position"
+          :buttonState="button.compState"
+          :flipped="button.flipped"
+          :rotation="button.rotation"
+          :connections="connections"
+          @handleMouseDown="(e) => handleMouseDown(e, button.id)"
+          @delete="removeLed(button.id)"
+          @flip="() => handleFlip(button.id)"
+          @rotate="() => handleRotate(button.id)"
+          @updateState="(state) => handleLedStateChange(button.id, state)"
         />
       </div>
       <!-- <ConnectionsLines
