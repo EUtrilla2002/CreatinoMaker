@@ -1,6 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted, defineProps, defineEmits, defineExpose } from 'vue'
+import ConfigMenu from '../Gadgets/Elements/ConfigBoard.vue'
+import { ref, onMounted, defineProps, defineEmits, defineExpose, nextTick } from 'vue'
 
+const showConfigMenu = ref(false)
+const configMenuPosition = ref({ x: 10, y: 10 })
+const configButtonRef = ref<SVGCircleElement | null>(null)
 // Props
 const props = defineProps<{
   positions: { 
@@ -47,6 +51,13 @@ defineExpose({
 function onMouseDown(e: MouseEvent) {
   emit('handleMouseDown', e, 'board')
 }
+
+const rotation = ref(0)
+
+function handleRotate() {
+  rotation.value = (rotation.value + 90) % 360
+}
+
 </script>
 
 <template>
@@ -60,11 +71,13 @@ function onMouseDown(e: MouseEvent) {
     @mousedown="onMouseDown"
     ref="svgRef"
   >
+  <!-- SVG de la placa -->
 <svg
    ref="svgEl" 
    width="25.4mm"
    height="42.9mm"
    version="1.1"
+   :style="{ transform: `rotate(${rotation}deg)` }"
    id="svg177"
    sodipodi:docname="board.svg"
    inkscape:version="1.4.2 (2aeb623e1d, 2025-05-12)"
@@ -983,9 +996,46 @@ function onMouseDown(e: MouseEvent) {
      id="image1"
      x="33.803333"
      y="18.84865"
-     inkscape:label="logo" /></svg>
+     inkscape:label="logo" />
+       <!-- Botón Configuración -->
+      <circle
+        cx="10"
+        cy="10"
+        r="10"
+        fill="transparent"
+        style="cursor: pointer; pointer-events: auto;"
+        ref="configButtonRef"
+        @click="handleRotate"
+      />
+      <text
+        x="10"
+        y="11"
+        text-anchor="middle"
+        alignment-baseline="middle"
+        font-size="12"
+        fill="black"
+        style="pointer-events: none;"
+      >🔁</text>
+    </svg>
+
 
   </div>
+  <Teleport to="#overlay-container" v-if="showConfigMenu">
+  <ConfigMenu
+    :style="{
+      position: 'absolute',
+      left: (configMenuPosition.x + 100) + 'px',
+      top: configMenuPosition.y + 'px',
+      zIndex: 10000,
+      pointerEvents: 'auto',
+      transform: 'scale(1.5)'
+    }"
+    @update:modelValue="color => {/* manejar color si aplica */}"
+    @flip="() => {/* manejar flip si aplica */}"
+    @rotate="() => {/* manejar rotate si aplica */}"
+    @delete="() => {/* manejar delete si aplica */}"
+  />
+</Teleport>
 </template>
 
 

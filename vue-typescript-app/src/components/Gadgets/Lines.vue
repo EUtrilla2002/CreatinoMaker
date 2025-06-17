@@ -6,7 +6,7 @@
       :key="'hover-' + index"
       :d="generateCurvePath(line)"
       stroke="transparent"
-      stroke-width="30"
+      stroke-width="20"
       fill="none"
       @mouseenter="hoveredLineIndex = index"
       @mouseleave="hoveredLineIndex = null"
