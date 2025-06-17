@@ -3,33 +3,46 @@
     <!-- Component List -->
     <div v-for="category in filteredCategories" :key="category.name" class="category-block">
       <div class="category-title fw-bold fs-6 mb-1">{{ category.name }}</div>
-            <hr class="my-2" />
+      <hr class="my-2" />
       <div class="category-divider"></div>
       <div class="flex-col">
-      <button
-        v-for="item in category.items"
-        :key="item.label"
-        class="btn btn-primary btn-80 d-flex align-items-center justify-content-center mb-1"
-        type="button"
-        @click="handleFile(item.label)"
-      >
-        <fa-icon :icon="item.icon" class="icon-separated" />
-        <span>{{ item.label }}</span>
-      </button>
+        <button
+          v-for="item in category.items"
+          :key="item.label"
+          class="btn btn-primary btn-80 d-flex align-items-center justify-content-center mb-1"
+          type="button"
+          @click="item.label === 'Examples' ? (showExamplesDropdown = !showExamplesDropdown) : handleFile(item.label)"
+        >
+          <fa-icon :icon="item.icon" class="icon-separated" />
+          <span>{{ item.label }}</span>
+        </button>
+        <!-- Dropdown para archivos de ejemplo -->
+        <div
+          v-if="showExamplesDropdown"
+          class="dropdown-menu show"
+          style="position: relative; width: 100%; z-index: 1000;"
+        >
+          <button
+            v-for="example in exampleFiles"
+            :key="example.file"
+            class="dropdown-item"
+            type="button"
+            @click="handleExampleFile(example.file)"
+          >
+            {{ example.label }}
+          </button>
+        </div>
       </div>
     </div>
   </div>
 </template>
-
 
 <script setup lang="ts">
 import { ref, computed , onMounted, onBeforeUnmount} from 'vue'
 
 const emit = defineEmits(['file-action']);
 
-
 function handleFile(label) {
-  console.log(`Adding component: ${label}`)
   switch(label) {
     case 'Save':
       emit('file-action', 'save')
@@ -37,18 +50,14 @@ function handleFile(label) {
     case 'Upload':
       emit('file-action', 'upload')
       break;
-    case 'Servo':
-      emit('file-action', 'Servo')
-      break;
-    // case 'RGB LED':
-    //   emit('add-gadget', 'RGB LED')
-    //   break;
-    // case 'SSD1306 OLED display':
-    //   emit('add-gadget', 'SSD1306 OLED display')
-    //   break;
   }
 }
 
+function handleExampleFile(file) {
+  showExamplesDropdown.value = false
+  console.log("Example file selected:", file)
+  emit('file-action', { type: 'example', file })
+}
 
 const search = ref('')
 
@@ -61,14 +70,13 @@ const categories = ref([
       { label: 'Examples', icon: 'infinity' },
     ],
   },
-  // {
-  //   name: 'Display',
-  //   items: [
-  //     { label: 'RGB LED', icon: '/icons/rgbled.png' },
-  //     { label: 'SSD1306 OLED display', icon: '/icons/oled.png' },
-  //   ],
-  // },
 ])
+const exampleFiles = [
+  { label: 'Semaphore', file: 'examples/semaphore.json' },
+  // { label: 'Blink', file: 'blink.json' },
+  // { label: 'Contador', file: 'counter.json' }
+]
+const showExamplesDropdown = ref(false)
 
 const filteredCategories = computed(() => {
   if (!search.value) return categories.value

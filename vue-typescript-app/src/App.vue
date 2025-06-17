@@ -73,20 +73,6 @@ const connections = ref<Array<{
 }>>([]);
 // Código
 
-// const asmCode = ref([
-//       "addi a0, a0, 5",
-//       "addi a1, a1, 1",
-//       "jal ra, 0x100",
-//       "addi a0, a0, -5",
-//       "addi a0, a0, 1000",
-//       "jal ra, 0x104",
-//       "addi a0, a0, -1000",
-//       "addi a0, a0, 5",
-//       "addi a1, a1, -1",
-//       "addi a1, a1, 0",
-//       "jal ra, 0x100",
-//       "addi t1, t1, 2",
-//     ]);
 const asmCode = ref([
       "addi a0, a0, 5",
       "addi a1, a1, 1",
@@ -99,17 +85,31 @@ const asmCode = ref([
       "addi a1, a1, -1",
       "addi a1, a1, 0",
       "jal ra, 0x100",
-      "addi a0, a0, 1",
-      "addi a1, a1, 1",
-      "jal ra, 0x100",      
-      "addi a0, a0, -6",
-      "addi a0, a0, 1000",
-      "jal ra, 0x104",
-      "addi a0, a0, -1000",
-      "addi a0, a0, 6",
-      "addi a1, a1, 0",
-      "jal ra, 0x100", 
+      "addi t1, t1, 2",
     ]);
+// const asmCode = ref([
+//       "addi a0, a0, 5",
+//       "addi a1, a1, 1",
+//       "jal ra, 0x100",
+//       "addi a0, a0, -5",
+//       "addi a0, a0, 1000",
+//       "jal ra, 0x104",
+//       "addi a0, a0, -1000",
+//       "addi a0, a0, 5",
+//       "addi a1, a1, -1",
+//       "addi a1, a1, 0",
+//       "jal ra, 0x100",
+//       "addi a0, a0, 1",
+//       "addi a1, a1, 1",
+//       "jal ra, 0x100",      
+//       "addi a0, a0, -6",
+//       "addi a0, a0, 1000",
+//       "jal ra, 0x104",
+//       "addi a0, a0, -1000",
+//       "addi a0, a0, 6",
+//       "addi a1, a1, 0",
+//       "jal ra, 0x100", 
+//     ]);
 
 const draggingId = ref<string | null>(null)
 const offset = reactive({ x: 0, y: 0 })
@@ -326,6 +326,32 @@ function handleMouseUp() {
     tempLine.value = null;
   }, 50); // Espera breve para dejar que el click ocurra
 }
+// moverse por el entorno
+// ...existing code...
+const pan = reactive({ x: 0, y: 0 });
+const isPanning = ref(false);
+const panStart = reactive({ x: 0, y: 0 });
+
+function handleWorkspaceMouseDown(e: MouseEvent) {
+  // Solo inicia el pan si no estás arrastrando un componente ni dibujando línea
+  if (!draggingId.value && !selectedPin.value) {
+    isPanning.value = true;
+    panStart.x = e.clientX - pan.x;
+    panStart.y = e.clientY - pan.y;
+  }
+}
+
+function handleWorkspaceMouseMove(e: MouseEvent) {
+  if (isPanning.value) {
+    pan.x = e.clientX - panStart.x;
+    pan.y = e.clientY - panStart.y;
+  }
+}
+
+function handleWorkspaceMouseUp() {
+  isPanning.value = false;
+}
+//Conexion con el kernel
 
 const runProgram = async () => {
       const programBuffer = Assembler.assemble(asmCode.value);
@@ -562,6 +588,7 @@ onMounted(() => {
 });
 // Pantalla archivos
 function onFileAction(action) {
+  console.log("File action received:", action);
   if (action === 'save') {
     console.log("Saving board state...");
     showSave.value = true;
@@ -570,7 +597,11 @@ function onFileAction(action) {
     console.log("Uploading board state...");
     showUpload.value = true;
   }
-}
+  if (action.type == "example") {
+    console.log("Loading example file:", action.file);
+    loadPreloadedFile(action.file);
+    }
+  }
 
 function confirmDownload() {
   showSave.value = false;
@@ -648,6 +679,34 @@ function cancelUpload() {
   showUpload.value = false;
 }
 
+//Ejemplos
+function loadPreloadedFile(file) {
+  fetch(file)
+    .then(res => res.json())
+    .then(parsed => {
+      positions.value = (parsed.positions || []).map(p => ({
+        id: p.id,
+        position: p.position,
+        compState: p.compState ?? true,
+        flipped: p.flipped ?? false,
+        rotation: p.rotation ?? 0,
+        color: p.color ?? 'red'
+      }));
+      connections.value = parsed.connections || [];
+      boardDataMutable.value = parsed.boardData && parsed.boardData.pins
+        ? parsed.boardData
+        : { ...boardData };
+      asmCode.value = parsed.code || [];
+
+      nextTick(() => {
+        updateConnectionsPositions();
+      });
+    })
+    .catch(err => {
+      console.error('Error loading precargado:', err);
+    });
+}
+
 
 </script>
 
@@ -657,6 +716,9 @@ function cancelUpload() {
     <Menu v-if="showMenu" :dark-mode="darkMode" style="position: absolute; bottom:480px; right: 460px; z-index: 1200;" @add-gadget="handleAddGadget" />
     <FileMenu v-if="showFile" style="position: absolute; top: 170px; right: 250px; z-index: 1000;" @file-action="onFileAction" />
     <WorkMenu v-if="showWork" style="position: absolute; top: 170px; left:100px; z-index: 1000;" @work-action="onWorkAction" />
+        <!-- <button @click="loadPreloadedFile" style="position: absolute; top: 20px; left: 20px; z-index: 1000;">
+      Cargar archivo precargado
+    </button> -->
 
     <!-- Pantalla save -->
     <div class="modal fade show" tabindex="-1" style="display: block;" v-if="showSave" aria-modal="true" role="dialog">
@@ -698,7 +760,11 @@ function cancelUpload() {
     </div>
     <div class="modal-backdrop fade show" v-if="showUpload"></div>
 
-    <div ref="workspaceRef" style="width: 90%; height: 70%; border: 2px solid #ccc; position: relative; margin-bottom: 1rem; overflow: hidden;">
+    <div ref="workspaceRef" 
+      @mousedown="handleWorkspaceMouseDown"
+      @mousemove="handleWorkspaceMouseMove"
+      @mouseup="handleWorkspaceMouseUp"
+      style="width: 90%; height: 70%; border: 2px solid #ccc; position: relative; margin-bottom: 1rem; overflow: hidden;">
       <!-- Elementos de zoom -->
       <div style="position: absolute; top: 20px; left: 20px; z-index: 1100; display: flex; flex-direction: column;">
         <!-- <button @click="zoomIn" style="font-size: 2rem; padding: 0.75rem 1.5rem; margin-bottom: 0.5rem;" id="menu-btn">
@@ -735,11 +801,10 @@ function cancelUpload() {
       </div>
       <div 
         :style="{ 
-          transform: `scale(${SCALE})`, 
+          transform: `translate(${pan.x}px, ${pan.y}px) scale(${SCALE})`, 
           transformOrigin: 'top left', 
           display: 'inline-block' 
-        }"
-      >
+        }">
         <BoardElement
           :positions="positions"
           @handleMouseDown="handleMouseDown"

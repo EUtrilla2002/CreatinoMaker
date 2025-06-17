@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import ConfigMenu from '../Gadgets/Elements/ConfigBoard.vue'
 import { ref, onMounted, defineProps, defineEmits, defineExpose, nextTick } from 'vue'
 
 const showConfigMenu = ref(false)
