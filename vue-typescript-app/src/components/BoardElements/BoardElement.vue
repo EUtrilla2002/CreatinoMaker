@@ -1,8 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted, defineProps, defineEmits, defineExpose, nextTick } from 'vue'
+import { ref, onMounted, defineProps, defineEmits, defineExpose, nextTick, computed } from 'vue'
 
-const showConfigMenu = ref(false)
-const configMenuPosition = ref({ x: 10, y: 10 })
 const configButtonRef = ref<SVGCircleElement | null>(null)
 // Props
 const props = defineProps<{
@@ -10,6 +8,7 @@ const props = defineProps<{
     id: string;
     position: { x: number; y: number };
     compState: boolean;
+    rotation: number;
   }[]
 }>()
 
@@ -21,7 +20,8 @@ const getBoardPosition = () => {
 
 // Emit
 const emit = defineEmits<{
-  (e: 'handleMouseDown', event: MouseEvent, id: string): void
+  (e: 'handleMouseDown', event: MouseEvent, id: string): void;
+  (e: 'updateBoard', payload: { rotation: number }): void;
 }>()
 
 // Refs
@@ -50,12 +50,16 @@ defineExpose({
 function onMouseDown(e: MouseEvent) {
   emit('handleMouseDown', e, 'board')
 }
-
-const rotation = ref(0)
+const rotation = computed(() => {
+  const board = props.positions.find(item => item.id === 'board');
+  return board?.rotation ?? 0;
+});
 
 function handleRotate() {
-  rotation.value = (rotation.value + 90) % 360
+  emit('updateBoard', {rotation: (rotation.value + 90) % 360})
 }
+
+
 
 </script>
 
@@ -1019,22 +1023,6 @@ function handleRotate() {
 
 
   </div>
-  <Teleport to="#overlay-container" v-if="showConfigMenu">
-  <ConfigMenu
-    :style="{
-      position: 'absolute',
-      left: (configMenuPosition.x + 100) + 'px',
-      top: configMenuPosition.y + 'px',
-      zIndex: 10000,
-      pointerEvents: 'auto',
-      transform: 'scale(1.5)'
-    }"
-    @update:modelValue="color => {/* manejar color si aplica */}"
-    @flip="() => {/* manejar flip si aplica */}"
-    @rotate="() => {/* manejar rotate si aplica */}"
-    @delete="() => {/* manejar delete si aplica */}"
-  />
-</Teleport>
 </template>
 
 

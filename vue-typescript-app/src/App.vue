@@ -706,6 +706,25 @@ function loadPreloadedFile(file) {
       console.error('Error loading precargado:', err);
     });
 }
+function handleUpdateBoardData(newBoardData) {
+  console.log("Updating board data:", newBoardData);
+
+  // Guarda el estado para undo
+  saveStateForUndo();
+
+  // Si hay rotación, actualízala en el objeto 'board' de positions
+  if (typeof newBoardData.rotation === 'number') {
+    const board = positions.value.find(item => item.id === 'board');
+    if (board) board.rotation = newBoardData.rotation;
+  }
+
+  // Actualiza boardDataMutable si es necesario
+  boardDataMutable.value = { ...boardDataMutable.value, ...newBoardData };
+
+  nextTick(() => {
+    setupPinListeners();
+  });
+}
 
 
 </script>
@@ -808,6 +827,7 @@ function loadPreloadedFile(file) {
         <BoardElement
           :positions="positions"
           @handleMouseDown="handleMouseDown"
+          @updateBoard="handleUpdateBoardData"
           ref="svgRef"
         />
         <LEDComponent
