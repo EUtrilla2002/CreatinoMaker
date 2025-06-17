@@ -59,6 +59,14 @@ function handleRotate() {
   emit('updateBoard', {rotation: (rotation.value + 90) % 360})
 }
 
+// Estado para el círculo GPIO8
+const gpio8Active = ref(false)
+
+// Función para alternar el estado
+function toggleGPIO8() {
+  gpio8Active.value = !gpio8Active.value
+}
+
 
 
 </script>
@@ -984,14 +992,17 @@ function handleRotate() {
        d="m 621,626 c 0,-37.8 -56.5,-37.8 -56.5,0 0,37.8 56.5,37.8 56.5,0"
        id="GNDH" /><path
        d="m 621,723 c 0,-37.8 -56.5,-37.8 -56.5,0 0,37.8 56.5,37.8 56.5,0"
-       id="GNDI" /><rect
-       x="340"
-       y="-80"
-       width="107"
-       height="110"
-       ry="55"
-       fill="#e3dedb"
-       id="GPIO8" /></g><image
+       id="GNDI" />      <rect
+        x="340"
+        y="-80"
+        width="107"
+        height="110"
+        ry="55"
+        :fill="gpio8Active ? '#fffef0' : '#e3dedf'"
+        id="GPIO8"
+        @click.stop="toggleGPIO8"
+        style="cursor:pointer"
+      /></g><image
      width="28.904213"
      height="27.174665"
      preserveAspectRatio="none"
