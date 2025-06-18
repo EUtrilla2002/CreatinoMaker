@@ -52,7 +52,7 @@ const positions = ref<{ id: string, position: { x: number, y: number }, compStat
     color: 'black',
   }
 ]);
-const ledRefs = ref<Record<string, any>>({});
+const gadgetRefs = ref<Record<string, any>>({});
 //Deformar líneas
 
 // Dibujo de líneas
@@ -252,17 +252,29 @@ function updateConnectionsPositions() {
 
     const toId = conn.toPinId.substring(0, conn.toPinId.lastIndexOf('-'));
     const side = conn.toPinId.substring(conn.toPinId.lastIndexOf('-') + 1);
+    console.log(toId)
 
-    const toLedComponent = ledRefs.value[toId];
+    const toLedComponent = gadgetRefs.value[toId];
     if (!toLedComponent) return conn;
 
     const fromRect = fromElement.getBoundingClientRect();
     const x1 = fromRect.left + fromRect.width / 2 - workspaceRect.left;
     const y1 = fromRect.top + fromRect.height / 2 - workspaceRect.top;
-
-    const ledValues = toLedComponent.getPinCoords();
-    const x2 = (side === 'left' ? ledValues.left.x : ledValues.right.x) - workspaceRect.left;
-    const y2 = (side === 'left' ? ledValues.left.y : ledValues.right.y) - workspaceRect.top;
+    let x2 = conn.x2;
+    let y2 = conn.y2;
+    if (toId.includes('led')){
+      const ledValues = toLedComponent.getPinCoords();
+      x2 = (side === 'left' ? ledValues.left.x : ledValues.right.x) - workspaceRect.left;
+      y2 = (side === 'left' ? ledValues.left.y : ledValues.right.y) - workspaceRect.top;
+    }
+    else if (toId.includes('button')) {
+      // side será 'upleft', 'upright', 'downleft', 'downright'
+      const buttonValues = toLedComponent.getPinCoords();
+      if (buttonValues && buttonValues[side]) {
+        x2 = buttonValues[side].x - workspaceRect.left;
+        y2 = buttonValues[side].y - workspaceRect.top;
+      }
+    }
 
     return {
       ...conn,
@@ -310,6 +322,7 @@ function handlePinClick(ledId, side) {
 
 
   });
+  console.log(connections.value)
 
   tempLine.value = null;
   selectedPin.value = null;
@@ -858,8 +871,8 @@ function handleUpdateBoardData(newBoardData) {
           @rotate="() => handleRotate(led.id)"
           @updateState="(state) => handleLedStateChange(led.id, state)"
           :ref="el => {
-            if (el) ledRefs[led.id] = el;
-            else delete ledRefs[led.id];
+            if (el) gadgetRefs[led.id] = el;
+            else delete gadgetRefs[led.id];
           }"
         />
         <ButtonComponent
@@ -871,10 +884,15 @@ function handleUpdateBoardData(newBoardData) {
           :rotation="button.rotation"
           :connections="connections"
           @handleMouseDown="(e) => handleMouseDown(e, button.id)"
+          @handlePinClick="(side) => handlePinClick(button.id, side)"
           @delete="removeLed(button.id)"
           @flip="() => handleFlip(button.id)"
           @rotate="() => handleRotate(button.id)"
           @updateState="(state) => handleLedStateChange(button.id, state)"
+          :ref="el => {
+            if (el) gadgetRefs[button.id] = el;
+            else delete gadgetRefs[button.id];
+          }"
         />
       </div>
       <!-- <ConnectionsLines

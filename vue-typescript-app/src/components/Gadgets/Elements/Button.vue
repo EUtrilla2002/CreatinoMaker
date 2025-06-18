@@ -7,7 +7,13 @@
     ref="buttonRef"
   >
     <div :style="{ transform: `${flipped ? 'scaleX(-1)' : ''} rotate(${rotation}deg)` }">
-      <wokwi-pushbutton :color="buttonColor" :pressed="isPressed ? false : ''" style="width:8px;height:8px;" />
+      <wokwi-pushbutton
+        :color="buttonColor"
+        :pressed="isPressed ? false : ''"
+        style="width:8px;height:8px;"
+        @button-press="onButtonPress"
+        @button-release="onButtonRelease"
+      />
       <svg
         width="100"
         height="100"
@@ -160,7 +166,7 @@ defineExpose({ getPinCoords })
 
 const emit = defineEmits<{
   (e: 'handleMouseDown', event: MouseEvent, id: string): void
-  (e: 'handlePinClick', side: 'left' | 'right'): void
+  (e: 'handlePinClick', side: 'upleft' | 'downleft' | 'upright' | 'downright'): void
   (e: 'update:modelValue', color: string): void
   (e: 'delete', id: string): void
   (e: 'updateState', state: { flipped: boolean; rotation: number, color: string }): void
@@ -181,6 +187,7 @@ function handleMouseDown(e: MouseEvent) {
   emit('handleMouseDown', e, 'led')
 }
 function handlePinClick(side: 'upleft' | 'downleft' | 'upright' | 'downright') {
+  console.log('Pin clicked:', side)
   emit('handlePinClick', side)
 }
 function handleConfigClick(event: MouseEvent) {
@@ -197,6 +204,18 @@ function handleConfigClick(event: MouseEvent) {
       }
     })
   }
+}
+
+function onButtonPress(event) {
+  // Lógica cuando se presiona el botón
+  console.log("Pressed!!")
+  isPressed.value = true
+}
+
+function onButtonRelease(event) {
+  // Lógica cuando se suelta el botón
+  console.log("Released!!")
+  isPressed.value = false
 }
 </script>
 
