@@ -74,43 +74,38 @@ const connections = ref<Array<{
 }>>([]);
 // Código
 
+const asmCode = ref([
+      "addi a0, a0, 4000",
+      "jal ra, 0x104",
+      "addi a0, a0, -4000",
+      "addi a0, a0, 5",
+      "addi a1, a1, 1",
+      "jal ra, 0x108",
+
+    ]);
 // const asmCode = ref([
-//       "addi a0, a0, 8",
+//       "addi a0, a0, 5",
 //       "addi a1, a1, 1",
 //       "jal ra, 0x100",
-//       "addi a0, a0, -8",
+//       "addi a0, a0, -5",
 //       "addi a0, a0, 1000",
 //       "jal ra, 0x104",
 //       "addi a0, a0, -1000",
-//       "addi a0, a0, 8",
+//       "addi a0, a0, 5",
 //       "addi a1, a1, -1",
+//       "addi a1, a1, 0",
 //       "jal ra, 0x100",
-
-
+//       "addi a0, a0, 1",
+//       "addi a1, a1, 1",
+//       "jal ra, 0x100",      
+//       "addi a0, a0, -6",
+//       "addi a0, a0, 1000",
+//       "jal ra, 0x104",
+//       "addi a0, a0, -1000",
+//       "addi a0, a0, 6",
+//       "addi a1, a1, 0",
+//       "jal ra, 0x100", 
 //     ]);
-const asmCode = ref([
-      "addi a0, a0, 5",
-      "addi a1, a1, 1",
-      "jal ra, 0x100",
-      "addi a0, a0, -5",
-      "addi a0, a0, 1000",
-      "jal ra, 0x104",
-      "addi a0, a0, -1000",
-      "addi a0, a0, 5",
-      "addi a1, a1, -1",
-      "addi a1, a1, 0",
-      "jal ra, 0x100",
-      "addi a0, a0, 1",
-      "addi a1, a1, 1",
-      "jal ra, 0x100",      
-      "addi a0, a0, -6",
-      "addi a0, a0, 1000",
-      "jal ra, 0x104",
-      "addi a0, a0, -1000",
-      "addi a0, a0, 6",
-      "addi a1, a1, 0",
-      "jal ra, 0x100", 
-    ]);
 
 const draggingId = ref<string | null>(null)
 const offset = reactive({ x: 0, y: 0 })
@@ -252,7 +247,6 @@ function updateConnectionsPositions() {
 
     const toId = conn.toPinId.substring(0, conn.toPinId.lastIndexOf('-'));
     const side = conn.toPinId.substring(conn.toPinId.lastIndexOf('-') + 1);
-    console.log(toId)
 
     const toLedComponent = gadgetRefs.value[toId];
     if (!toLedComponent) return conn;
@@ -398,6 +392,10 @@ const runProgram = async () => {
             await hookMap[0x104](cpu, (val) => (compState.value = val));
             prev_value = cpu.pc;
             break;
+          case 0x108:
+            await hookMap[0x108](cpu, connections.value,(val) => (compState.value = val));
+            prev_value = cpu.pc;
+            break;  
           default:
             prev_value = cpu.pc;
             cpu.executionStep();
