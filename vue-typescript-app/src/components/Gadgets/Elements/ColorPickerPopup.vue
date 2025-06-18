@@ -5,9 +5,10 @@
 
     <!-- Popup anclado -->
     <div
-      class="color-popup border rounded-3 shadow"
+      class="color-popup border rounded-3 shadow color-picker-popup"
       :class="isDark ? 'bg-dark text-light' : 'bg-white'"
       :style="{ top: position.y + 'px', left: position.x + 'px', width: width + 'px' }"
+      @mousedown.stop
     >
       <div
         class="popup-arrow"

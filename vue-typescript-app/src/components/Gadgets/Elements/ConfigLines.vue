@@ -1,8 +1,12 @@
 <template>
-    <div class="menu-panel bg-white border rounded-3 shadow-sm p-3" :class="{ 'bg-dark text-light': isDark }" style="width:220px;max-height:300px;overflow-y:auto;">
+    <div
+      class="menu-panel bg-white border rounded-3 shadow-sm p-3"
+      :class="{ 'bg-dark text-light': isDark }"
+      style="width:220px;max-height:300px;overflow-y:auto;"
+    >
     <div v-for="category in filteredCategories" :key="category.name" class="mb-2">
       <div class="d-flex align-items-center justify-content-between mb-1">
-        <span class="fw-bold fs-6">{{ category.name }}</span>
+        <span class="fw-bold fs-6 ">{{ category.name }}</span>
         <button class="btn btn-sm p-0 border-0 bg-transparent ms-2" @click="$emit('close')">&times;</button>
       </div>
       <hr class="my-2" />
@@ -11,7 +15,7 @@
           v-for="item in category.items"
           :key="item.label"
           :ref="item.label === 'Color' ? setColorButtonRef : null"
-          class="btn btn-light d-flex align-items-center me-2 mb-1"
+          class="btn btn-light d-flex align-items-center me-1 mb-1"
           :class="{ active: selectedItem === item.label }"
           type="button"
           @click="onItemClick(item.label)"
@@ -123,34 +127,33 @@ onMounted(() => {
 
 <style scoped>
 .menu-panel {
-  width: 240px !important;
-  min-height: 150px;
+  width: 220px !important;
+  min-height: 10px;
   background: #fff !important;
-  border-radius: 1rem;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.10);
-  padding: 1rem;
-  font-size: 1rem;
+  border-radius: 0.7rem;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.10);
+  padding: 1rem !important; /* igual que p-3 de bootstrap */
+  font-size: 0.95rem;       /* igual que ConfigWork */
   z-index: 1000000;
   color: #212529;
   border: 1px solid #dee2e6;
 }
-/* .menu-panel .btn-light {
-  background: #f8f9fa !important;
-  color: #212529 !important;
-  border: 1px solid #ced4da !important;
-  font-size: 1rem !important;
-  border-radius: 0.375rem;
-  transition: background 0.2s, color 0.2s;
-  padding: 0.4rem 0.6rem;
+
+/* Botones más pequeños */
+.menu-panel .btn {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.7rem;
+  min-width: 0;
+  min-height: 0;
+  line-height: 1.1;
+  margin-right: 0.1rem;
 }
-.menu-panel .btn-light.active,
-.menu-panel .btn-light:active {
-  background-color: #e2e6ea !important;
-  color: #212529 !important;
+
+.fw-bold.fs-6 {
+  font-size: 0.8rem !important;
 }
-.menu-panel .btn-outline-secondary {
-  padding: 0 6px;
-  font-size: 0.9rem;
-  line-height: 1;
-} */
+
+hr.my-2 {
+  margin: 0.2rem 0 !important;
+}
 </style>

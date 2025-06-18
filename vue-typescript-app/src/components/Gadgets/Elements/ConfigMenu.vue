@@ -1,5 +1,9 @@
 <template>
-  <div ref="menuRef" class="menu-panel bg-white border rounded-3 shadow-sm p-3" :class="isDark ? 'bg-dark text-light' : 'bg-white'" style="width: 240px; min-height: 150px; z-index: 1000;">
+  <div
+    ref="menuRef"
+    :class="['config-menu', 'menu-panel', 'bg-white', 'border', 'rounded-3', 'shadow-sm', 'p-3', isDark ? 'bg-dark text-light' : 'bg-white']"
+    style="width: 240px; min-height: 150px; z-index: 1000;"
+  >
     <div v-for="category in filteredCategories" :key="category.name" class="mb-4">
       <div class="fw-bold fs-6 mb-2">{{ category.name }}</div>
       <hr class="my-2" />
@@ -22,6 +26,7 @@
     <!-- Popup anclado a la posición del botón -->
     <ColorPickerPopup
       v-if="selectedItem === 'Color'"
+      ref="colorPickerRef"
       :modelValue="selectedColor"
       :position="popupPosition"
       :width="menuWidth"
@@ -32,7 +37,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, nextTick, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, nextTick, onMounted, onBeforeUnmount, watch, defineExpose } from 'vue'
 import ColorPickerPopup from './ColorPickerPopup.vue'
 const menuRef = ref<HTMLElement | null>(null)
 const menuWidth = ref(0)
@@ -57,6 +62,8 @@ const categories = ref([
 const filteredCategories = computed(() => categories.value)
 
 const colorButtonRef = ref<HTMLElement | null>(null)
+const colorPickerRef = ref<HTMLElement | null>(null)
+defineExpose({ colorPickerRef })
 
 const setColorButtonRef = (el: HTMLElement | null) => {
   if (el) colorButtonRef.value = el

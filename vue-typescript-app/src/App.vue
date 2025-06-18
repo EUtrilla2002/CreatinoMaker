@@ -743,7 +743,7 @@ function handleUpdateBoardData(newBoardData) {
 <template>
   <div id="app-main" class="App" @mousemove="handleMouseMove" @mouseup="handleMouseUp" style="width: 100vw; height: 100vh; position: relative; overflow: hidden;">
     <h1 style="text-align: center; margin-top: 1rem;">Creatino Maker</h1>
-    <Menu v-if="showMenu" :dark-mode="darkMode" style="position: absolute; bottom:480px; right: 460px; z-index: 1200;" @add-gadget="handleAddGadget" />
+    <Menu v-if="showMenu" :dark-mode="darkMode" style="position: absolute; bottom:300px; right: 360px; z-index: 1200;" @add-gadget="handleAddGadget" />
     <FileMenu v-if="showFile" style="position: absolute; top: 170px; right: 250px; z-index: 1000;" @file-action="onFileAction" />
     <WorkMenu v-if="showWork" style="position: absolute; top: 170px; left:100px; z-index: 1000;" @work-action="onWorkAction" />
         <!-- <button @click="loadPreloadedFile" style="position: absolute; top: 20px; left: 20px; z-index: 1000;">

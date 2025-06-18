@@ -165,7 +165,7 @@ function handleConfigClick(event: MouseEvent) {
       if (configButtonRef.value) {
         const rect = configButtonRef.value.getBoundingClientRect()
         configMenuPosition.value = {
-          x: rect.left + 80,
+          x: rect.left + 30,
           y: rect.top
         }
         console.log('Absolute config menu position:', configMenuPosition.value)

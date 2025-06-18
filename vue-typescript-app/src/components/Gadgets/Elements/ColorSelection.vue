@@ -1,42 +1,39 @@
 <template>
   <Teleport to="body">
     <!-- Fondo semitransparente -->
-    <div class="overlay" @click.self="$emit('close')"></div>
+    <div
+      class="position-fixed top-0 start-0 w-100 h-100 bg-dark bg-opacity-50"
+      :class="{ 'text-light': isDark }"
+      style="z-index:1040;"
+      @click.self="$emit('close')"
+    ></div>
 
     <!-- Popup anclado -->
     <div
-      class="color-popup"
-      :style="{ top: position.y + 'px', left: position.x + 'px', width: width + 'px' }"
+      class="popup position-fixed bg-white border rounded shadow p-4"
+      :style="{ top: position.y + 'px', left: position.x + 'px', width: width + 'px', zIndex: 1050 }"
     >
-      <div class="popup-arrow"></div>
+      <!-- Flecha decorativa opcional -->
+      <div style="position:absolute;top:-10px;left:30px;width:0;height:0;border-left:10px solid transparent;border-right:10px solid transparent;border-bottom:10px solid #dee2e6;"></div>
 
-      <div class="popup-content">
+      <div>
         <!-- Paleta de colores -->
-        <div class="color-grid">
+        <div class="d-flex gap-3 justify-content-center mb-3">
           <button
             v-for="preset in presets"
             :key="preset"
             :style="{ backgroundColor: preset }"
-            class="color-btn"
+            class="btn border border-2 rounded-circle"
+            style="width:36px;height:36px;"
             @click="color = preset"
           ></button>
         </div>
 
-        <!-- <div class="mt-3 text-white text-sm">
-          Color seleccionado: <span :style="{ color }">{{ color }}</span>
-        </div> -->
-<!-- 
         <button
-          class="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 transition"
-          @click="$emit('update:modelValue', color)"
-        >
-          Aplicar Color
-        </button> -->
-        <button
-          class="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-500 transition"
+          class="btn btn-primary w-100"
           @click="$emit('close')"
         >
-          Cerrar
+          Close
         </button>
       </div>
     </div>
@@ -44,40 +41,56 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-
+import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
+import { Teleport } from 'vue'
 const props = defineProps<{
   modelValue: string
   position: { x: number; y: number }
   width: number
 }>()
 
-const emit = defineEmits(['update:lineValue', 'close'])
+const emit = defineEmits(['update:modelValue', 'close'])
 
-const presets = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00']
+const presets = ['#FF0000', '#0068ff', '#28bd00', '#ffd501', '#000000','#d4d4d4' ]
 
 const color = computed({
   get: () => props.modelValue,
-  set: value => emit('update:lineValue', value),
+  set: value => emit('update:modelValue', value),
 })
+
+// Detecta modo oscuro por clase en body o app
+const isDark = ref(document.body.classList.contains('dark-mode') || document.querySelector('#app-main')?.classList.contains('dark-mode'))
+
+function updateDarkMode() {
+  isDark.value = document.body.classList.contains('dark-mode') || document.querySelector('#app-main')?.classList.contains('dark-mode')
+}
+
+onMounted(() => {
+  const observer = new MutationObserver(updateDarkMode)
+  observer.observe(document.body, { attributes: true, attributeFilter: ['class'] })
+  const appMain = document.querySelector('#app-main')
+  if (appMain) {
+    observer.observe(appMain, { attributes: true, attributeFilter: ['class'] })
+  }
+  // Limpieza
+  onBeforeUnmount(() => observer.disconnect())
+})
+
 </script>
 
+<!-- No necesitas la mayoría de los estilos personalizados, Bootstrap se encarga -->
 <style scoped>
-.overlay {
-  position: fixed;
-  inset: 0;
-  background-color: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(2px);
-  z-index: 40;
+/* Sombra y borde más suave para el popup */
+.popup {
+  border-radius: 1rem;
+  border: 1px solid #dee2e6;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+  background: #fff;
+  min-width: 300px;
+  transition: box-shadow 0.2s;
 }
 
-.color-popup {
-  position: fixed;
-  z-index: 50;
-  transform: translateY(10px);
-  background-color: rgba(255, 255, 255, 0.1);
-}
-
+/* Flecha decorativa para el popup */
 .popup-arrow {
   position: absolute;
   top: -10px;
@@ -86,36 +99,31 @@ const color = computed({
   height: 0;
   border-left: 10px solid transparent;
   border-right: 10px solid transparent;
-  border-bottom: 10px solid #3d3d3d;
+  border-bottom: 10px solid #dee2e6;
 }
 
-.popup-content {
-  background: #2d2d2d;
-  border-radius: 1rem;
-  border: 1px solid #555;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
-  padding: 1.5rem;
-  width: 100%;
-  box-sizing: border-box;
+/* Botones de color: efecto de selección y hover */
+.btn.rounded-circle {
+  border-width: 2px;
+  transition: transform 0.1s, box-shadow 0.1s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.btn.rounded-circle:focus,
+.btn.rounded-circle:hover {
+  outline: none;
+  transform: scale(1.12);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+  border-color: #333;
 }
 
-.color-grid {
-  display: flex;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-  justify-content: center;
+/* Fondo oscuro del overlay */
+.bg-dark.bg-opacity-50 {
+  backdrop-filter: blur(2px);
 }
 
-.color-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 0.5rem;
-  border: 2px solid #888;
-  cursor: pointer;
-  transition: border 0.2s;
+/* Botón cerrar: margen arriba */
+.btn-danger {
+  margin-top: 1rem;
 }
 
-.color-btn:hover {
-  border-color: white;
-}
 </style>
