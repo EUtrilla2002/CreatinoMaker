@@ -76,43 +76,109 @@ const hookMap = {
     cpu.pc = cpu.registerSet.getRegister(1);
   },
 
-  0x108: function cr_digitalRead(cpu, connections, setLedState, boardElementRef) {
+  0x108: function cr_digitalRead(cpu, connections) {
     const pin = cpu.registerSet.getRegister(10); // a0
     console.log(`cr_digitalRead invoked! pin: ${pin}`);
     const GPIOpin = "GPIO" + pin;
     console.log(GPIOpin);
-    if (boardData.pins.includes(GPIOpin)) {
+
+    if (!boardData.pins.includes(GPIOpin)) {
+      cpu.registerSet.setRegister(10, 0);
+      cpu.pc = cpu.registerSet.getRegister(1);
+      return;
+    }
+
+    if (connections.length === 0) {
+      cpu.registerSet.setRegister(10, 0);
+      cpu.pc = cpu.registerSet.getRegister(1);
+      return;
+    }
+
+    // Helper to check invalid connection cases
+    function isInvalidCase(gpioEnd, gndEnd) {
       const gpioConnection = connections.find(
-        (conn) => conn.fromPinId === GPIOpin && conn.toPinId.endsWith("upleft")
+        (conn) => conn.fromPinId === GPIOpin && conn.toPinId.endsWith(gpioEnd)
       );
       const gndConnection = connections.find(
-          (conn) => conn.fromPinId.includes("GND") && conn.toPinId.endsWith("downright")
-        );
-      const existsGPIO = !!gpioConnection;
-      const existsGND = !!gndConnection;
-      console.log("Estado pin drcho arriba", existsGPIO);
+        (conn) => conn.fromPinId.includes("GND") && conn.toPinId.endsWith(gndEnd)
+      );
+      return !!gpioConnection && !!gndConnection;
+    }
 
-      if (existsGPIO && existsGND) {
-        const toPinId = gpioConnection.toPinId;
-        console.log("toPinId del Botón:", toPinId);
+    // Lista de casos inválidos
+    const invalidCases = [
+      ["upleft", "upright"],
+      ["downleft", "downright"],
+      ["downright", "downleft"],
+      ["upright", "upleft"],
+    ];
 
-        const lastDashIndex = toPinId.lastIndexOf("-");
-        const buttonId = toPinId.substring(0, lastDashIndex);
-
-        const toElement = document.getElementById(buttonId);
-        console.log("Elemento Boton:", toElement);
-
-        const wokwiButton = toElement.querySelector("wokwi-pushbutton");
-        console.log("¿Botón presionado?", wokwiButton.pressed);
-        cpu.registerSet.setRegister(10, pressed ? 1 : 0); // Set register 10 to 1 if pressed, otherwise 0
-      } else {
-        console.log("Not connected");
-        cpu.registerSet.setRegister(10, 0); // Set register 10 to 0 if not connected
+    for (const [gpioEnd, gndEnd] of invalidCases) {
+      if (isInvalidCase(gpioEnd, gndEnd)) {
+        cpu.registerSet.setRegister(10, 0);
+        cpu.pc = cpu.registerSet.getRegister(1);
+        return;
       }
     }
-    else { cpu.registerSet.setRegister(10, 0); }
-    cpu.pc = cpu.registerSet.getRegister(1); // ret
+
+    // Si hay conexión válida, buscar el botón y actualizar el registro
+    const gpioConnection = connections.find(
+      (conn) => conn.fromPinId.includes("GPIO")
+    );
+    if (gpioConnection) {
+      executeButton(gpioConnection);
+    } else {
+      cpu.registerSet.setRegister(10, 0);
+    }
+    cpu.pc = cpu.registerSet.getRegister(1);
+
+    function executeButton(gpioConnection) {
+      const toPinId = gpioConnection.toPinId;
+      console.log("toPinId del Botón:", toPinId);
+
+      const lastDashIndex = toPinId.lastIndexOf("-");
+      const buttonId = toPinId.substring(0, lastDashIndex);
+
+      const toElement = document.getElementById(buttonId);
+      console.log("Elemento Boton:", toElement);
+      const wokwiButton = toElement.querySelector("wokwi-pushbutton");
+      console.log("¿Botón presionado?", wokwiButton.pressed);
+      cpu.registerSet.setRegister(10, wokwiButton.pressed ? 1 : 0);
+    }
   },
 };
+
+
+      // // Case 1:
+      // const gpioConnection = connections.find(
+      //   (conn) => conn.fromPinId === GPIOpin && conn.toPinId.endsWith("upleft")
+      // );
+      // const gndConnection = connections.find(
+      //     (conn) => conn.fromPinId.includes("GND") && conn.toPinId.endsWith("downright")
+      //   );
+      // const existsGPIO = !!gpioConnection;
+      // const existsGND = !!gndConnection;
+      // console.log("Estado pin drcho arriba", existsGPIO);
+
+      // if (existsGPIO && existsGND) {
+      //   executeButton(gpioConnection); // Set register 10 to 1 if pressed, otherwise 0
+      // }
+      // // Case 2: diagonal down-right button
+      // gpioConnection = connections.find(
+      //   (conn) => conn.fromPinId === GPIOpin && conn.toPinId.endsWith("downright")
+      // );
+      // gndConnection = connections.find(
+      //     (conn) => conn.fromPinId.includes("GND") && conn.toPinId.endsWith("upleft")
+      //   );
+      // existsGPIO = !!gpioConnection;
+      // existsGND = !!gndConnection;
+      // console.log("Estado pin drcho arriba", existsGPIO);
+
+      // if (existsGPIO && existsGND) {
+      //   executeButton(gpioConnection); // Set register 10 to 1 if pressed, otherwise 0
+      // }
+
+      // Case 3
+
 
 export default hookMap;

@@ -1,6 +1,6 @@
 <template>
     <div
-      class="menu-panel bg-white border rounded-3 shadow-sm p-3"
+      class="menu-panel bg-white border rounded-3 shadow-sm p-3 "
       :class="{ 'bg-dark text-light': isDark }"
       style="width:220px;max-height:300px;overflow-y:auto;"
     >
