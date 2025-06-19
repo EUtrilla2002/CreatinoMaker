@@ -12,9 +12,9 @@ const hookMap = {
     console.log(GPIOpin);
     // Lógica de funcionamiento
           //setLedState(value);
-    if (GPIOpin == 'GPIO8'){
-        if (boardElementRef && boardElementRef.value && typeof boardElementRef.value.setGPIO8State === 'function') {
-          boardElementRef.value.setGPIO8State(!!value);
+    if (GPIOpin == 'GPIO30'){
+        if (boardElementRef && boardElementRef.value && typeof boardElementRef.value.setGPIO30State === 'function') {
+          boardElementRef.value.setGPIO30State(!!value);
         } else {
           console.warn('No se pudo acceder a setGPIO8State');
         }

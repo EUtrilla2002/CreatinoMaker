@@ -50,7 +50,7 @@
     "rotation": 0
   },
   "code": [
-    "addi a0, a0, 8",
+    "addi a0, a0, 30",
     "addi a1, a1, 1",
     "jal ra, 0x100",
     "addi a0, a0, -8",

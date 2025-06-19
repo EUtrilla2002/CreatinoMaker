@@ -40,23 +40,23 @@ onMounted(() => {
 })
 
 // Estado para el círculo GPIO8
-const gpio8Active = ref(false)
+const gpio30Active = ref(false)
 
-function setGPIO8State(state: boolean) {
-  gpio8Active.value = state
+function setGPIO30State(state: boolean) {
+  gpio30Active.value = state
 }
 
 
 // Función para alternar el estado
-function toggleGPIO8() {
-  gpio8Active.value = !gpio8Active.value
+function toggleGPIO30() {
+  gpio30Active.value = !gpio30Active.value
 }
 // Exponer referencias para que el padre pueda acceder
 defineExpose({
   svgEl,
   elementsGndGpio,
   svgRef,
-  setGPIO8State 
+  setGPIO30State: setGPIO30State 
 })
 
 // Función para manejar el evento mousedown
@@ -327,7 +327,7 @@ function handleRotate() {
        font-size="56.4px"
        id="text15"><tspan
          fill="#ffffff"
-         id="tspan15">GPIO8</tspan></text><rect
+         id="tspan15">@IO30</tspan></text><rect
        x="361"
        y="554"
        width="126"
@@ -1004,9 +1004,9 @@ function handleRotate() {
         width="107"
         height="110"
         ry="55"
-        :fill="gpio8Active ? '#fffef0' : '#e3dedf'"
-        id="GPIO8"
-        @click.stop="toggleGPIO8"
+        :fill="gpio30Active ? '#fffef0' : '#e3dedf'"
+        id="GPIO30"
+        @click.stop="toggleGPIO30"
         style="cursor:pointer"
       /></g><image
      width="28.904213"

@@ -32,6 +32,7 @@ import LEDComponent from './components/Gadgets/Elements/LED.vue';
 import ButtonComponent from './components/Gadgets/Elements/Button.vue'; 
 import FileMenu from './components/Gadgets/Elements/ConfigFile.vue';
 import WorkMenu from './components/Gadgets/Elements/ConfigWork.vue';
+import Buzzer from './components/Gadgets/Elements/Buzzer.vue';
 
 const workspaceRef = ref<HTMLDivElement | null>(null);
 const boardDataMutable = ref({ ...boardData });
@@ -204,6 +205,17 @@ function handleAddGadget(type: string) {
       color: 'gray'
     });
   }
+  if (type === 'BUZZER') {
+    const id = `buzzer-${Date.now()}-${Math.random()}`;
+    positions.value.push({
+      id,
+      position: { x: 200 + positions.value.length * 40, y: 200 },
+      compState: false,
+      flipped: false,
+      rotation: 0,
+      color: 'gray'
+    });
+  }
 }
 function handleLedStateChange(id: string, state: { flipped: boolean; rotation: number ,color: string}) {
   saveStateForUndo() 
@@ -344,8 +356,6 @@ function handleMouseUp() {
     tempLine.value = null;
   }, 50); // Espera breve para dejar que el click ocurra
 }
-// moverse por el entorno
-// ...existing code...
 const pan = reactive({ x: 0, y: 0 });
 const isPanning = ref(false);
 const panStart = reactive({ x: 0, y: 0 });
@@ -488,7 +498,7 @@ function setupWork() {
 }
 
 function clearConnections() {
-  const shouldClear = window.confirm("¿Estás seguro de que quieres borrar todas las conexiones?");
+  const shouldClear = window.confirm("Do you want to erase all? This action cannot be undone!!");
   if (!shouldClear) {
     return;
   }
@@ -507,15 +517,18 @@ function clearConnections() {
     }
   }
 
-  // 3. Eliminar LEDs que estaban conectados
-  positions.value = positions.value.filter(component => {
-    // Si es un LED, lo eliminamos si hay alguna conexión cuyo id contenga el id del LED
-    if (component.id.startsWith('led-')) {
-      return !connections.value.some(conn => conn.id.includes(component.id));
-    }
-    return true; // mantener si no es LED
-  });
+  // // 3. Eliminar LEDs que estaban conectados
+  // positions.value = positions.value.filter(component => {
+  //   // Si es un LED, lo eliminamos si hay alguna conexión cuyo id contenga el id del LED
+  //   if (component.id.startsWith('led-')) {
+  //     return !connections.value.some(conn => conn.id.includes(component.id));
+  //   }
+  //   return true; // mantener si no es LED
+  // });
+  positions.value = positions.value.filter(component => component.id === 'board');
   connections.value = [];
+  undoStack.value = [];
+  redoStack.value = [];
 
   // 4. Resetear selección
   selectedPin.value = null;
@@ -875,6 +888,25 @@ function handleUpdateBoardData(newBoardData) {
         />
         <ButtonComponent
           v-for="button in positions.filter(item => item.id.startsWith('button-'))"
+          :id="button.id"
+          :position="button.position"
+          :buttonState="button.compState"
+          :flipped="button.flipped"
+          :rotation="button.rotation"
+          :connections="connections"
+          @handleMouseDown="(e) => handleMouseDown(e, button.id)"
+          @handlePinClick="(side) => handlePinClick(button.id, side)"
+          @delete="removeLed(button.id)"
+          @flip="() => handleFlip(button.id)"
+          @rotate="() => handleRotate(button.id)"
+          @updateState="(state) => handleLedStateChange(button.id, state)"
+          :ref="el => {
+            if (el) gadgetRefs[button.id] = el;
+            else delete gadgetRefs[button.id];
+          }"
+        />
+      <Buzzer
+          v-for="button in positions.filter(item => item.id.startsWith('buzzer-'))"
           :id="button.id"
           :position="button.position"
           :buttonState="button.compState"
