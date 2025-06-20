@@ -1002,8 +1002,8 @@ onMounted(() => {
   <teleport to="body">
   <div v-if="showBoardSelect" class="modal-backdrop" style="z-index:3000;">
     <div class="modal-center">
-      <BoardSelect @select="handleBoardSelect" />
-      <button class="btn btn-secondary mt-2" @click="showBoardSelect = false">Cerrar</button>
+      <BoardSelect @select="handleBoardSelect" @close-select="showBoardSelect = false" />
+      <!-- <button class="btn btn-secondary mt-2" @click="showBoardSelect = false">Cerrar</button> -->
     </div>
   </div>
 </teleport>

@@ -20,10 +20,21 @@ function selectBoard(board) {
   console.log("Selected board:",board.base)
   emit('select', board.base)
 }
+function close() {
+  console.log("Closing")
+  emit('close-select')
+}
+
+// Detecta modo oscuro por clase en body o app
+const isDark = ref(document.body.classList.contains('dark-mode') || document.querySelector('#app-main')?.classList.contains('dark-mode'))
+
+function updateDarkMode() {
+  isDark.value = document.body.classList.contains('dark-mode') || document.querySelector('#app-main')?.classList.contains('dark-mode')
+}
 </script>
 
 <template>
-  <div class="modal-board-select">
+   <div class="menu-panel bg-white border rounded-3 shadow-sm p-3" :class="{ 'bg-dark text-light': isDark }">
     <h5>Selecciona una placa</h5>
     <div class="board-list">
       <div
@@ -37,6 +48,7 @@ function selectBoard(board) {
         <span>{{ board.name }}</span>
       </div>
     </div>
+    <button class="btn btn-secondary mt-2" @click="close">Cerrar</button>
   </div>
 </template>
 
