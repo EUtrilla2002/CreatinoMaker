@@ -1,5 +1,5 @@
 // src/hooks/hookMap.js
-import boardData from "./esp32c3devkit2.json";
+import boardData from "./esp32.json";
 
 const sleep = (delay) => new Promise((resolve) => setTimeout(resolve, delay));
 
