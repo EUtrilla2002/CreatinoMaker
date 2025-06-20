@@ -9,7 +9,7 @@
     <div :style="{ transform: `${flipped ? 'scaleX(-1)' : ''} rotate(${rotation}deg)` }">
       <wokwi-buzzer
         :color="buzzerColor"
-        :signal="isSignal ? false : ''"
+        :hasSignal="isSignal"
         style="width:8px;height:8px;"
       ></wokwi-buzzer>
       <svg
@@ -25,8 +25,8 @@
           height="8"
           fill="rgba(225, 0, 0, 0.3)"
           style="cursor: pointer; pointer-events: auto;"
-          @click.stop="handlePinClick('downleft')"
-          ref="DownLeftPinRef"
+          @click.stop="handlePinClick('left')"
+          ref="LeftPinRef"
         />
         <!-- Patita abajo drcha -->
         <rect
@@ -36,8 +36,8 @@
           height="8"
           fill="rgba(255, 0, 0, 0.3)"
           style="cursor: pointer; pointer-events: auto;"
-          @click.stop="handlePinClick('downright')"
-          ref="DownRightPinRef"
+          @click.stop="handlePinClick('right')"
+          ref="RightPinRef"
         />
         <!-- Botón Config -->
         <circle
@@ -83,8 +83,8 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps, defineEmits, ref, defineExpose, nextTick, watch } from 'vue'
-import ConfigMenu from './ConfigMenu.vue'
+import { defineProps, defineEmits, ref, defineExpose, nextTick, watch, onMounted } from 'vue'
+import ConfigMenu from './ConfigMenuSound.vue'
 
 const showConfigMenu = ref(false)
 const configMenuPosition = ref({ x: 10, y: 10 })
@@ -94,11 +94,10 @@ const isSignal = ref(false)
 
 const props = defineProps<{
   position: { x: number; y: number };
-  pressed: boolean;
   id: string;
   selectedPin: string | null;
-  connections: Array<{ pinName: string; buzzerPin: 'upleft' | 'upright' | 'downright' | 'downleft' }> | [];
-  buzzerColor: string;
+  isSignal: boolean
+  connections: Array<{ pinName: string; buzzerPin: 'left' | 'right' }> | [];
   flipped: boolean;
   rotation: number
 }>()
@@ -106,10 +105,8 @@ const props = defineProps<{
 const buzzerColor = ref(props.buzzerColor || 'red')
 const rotation = ref(props.rotation || 0)
 const flipped = ref(props.flipped || false)
-const UpRightPinRef = ref<SVGRectElement | null>(null)
-const UpLeftPinRef= ref<SVGRectElement | null>(null)
-const DownRightPinRef = ref<SVGRectElement | null>(null)
-const DownLeftPinRef= ref<SVGRectElement | null>(null)
+const RightPinRef = ref<SVGRectElement | null>(null)
+const LeftPinRef= ref<SVGRectElement | null>(null)
 
 watch(() => props.rotation, (newStatus) => {
   rotation.value = newStatus
@@ -122,17 +119,15 @@ watch(() => props.buzzerColor, (newColor) => {
 })
 
 function getPinCoords() {
-  const upleft = UpLeftPinRef.value?.getBoundingClientRect()
-  const upright = UpRightPinRef.value?.getBoundingClientRect()
-  const downleft = DownLeftPinRef.value?.getBoundingClientRect()
-  const downright = DownRightPinRef.value?.getBoundingClientRect()
-  return { upleft, upright, downleft, downright }
+  const left = LeftPinRef.value?.getBoundingClientRect()
+  const right = RightPinRef.value?.getBoundingClientRect()
+  return { left, right }
 }
 defineExpose({ getPinCoords })
 
 const emit = defineEmits<{
   (e: 'handleMouseDown', event: MouseEvent, id: string): void
-  (e: 'handlePinClick', side: 'upleft' | 'downleft' | 'upright' | 'downright'): void
+  (e: 'handlePinClick', side: 'left' | 'right'): void
   (e: 'update:modelValue', color: string): void
   (e: 'delete', id: string): void
   (e: 'updateState', state: { flipped: boolean; rotation: number, color: string }): void
@@ -171,8 +166,32 @@ function handleConfigClick(event: MouseEvent) {
     })
   }
 }
+//Buzzer sounds
+const buzzerAudio = ref<HTMLAudioElement | null>(null)
+const audioInitialized = ref(false)
+
+function initAudio() {
+  if (!audioInitialized.value) {
+    buzzerAudio.value = new Audio('/sounds/buzzer.mp3')
+    buzzerAudio.value.loop = true
+    audioInitialized.value = true
+  }
+}
+
+watch(isSignal, (newVal) => {
+  if (!audioInitialized.value) return
+  if (newVal) {
+    console.log('Buzzer activated')
+    buzzerAudio.value.currentTime = 0
+    buzzerAudio.value.play()
+  } else {
+    buzzerAudio.value.pause()
+    buzzerAudio.value.currentTime = 0
+  }
+})
 
 function onBuzzerPress(event) {
+  initAudio()
   isSignal.value = true
 }
 

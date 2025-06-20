@@ -39,22 +39,31 @@ const hookMap = {
         );
         if (existsGPIO == true && existsGND == true) {
           //setLedState(value);
-          const toPinId = gpioConnection.toPinId;
-          console.log("toPinId del LED:", toPinId);
-
-          const lastDashIndex = toPinId.lastIndexOf("-");
-          const ledId = toPinId.substring(0, lastDashIndex);
-
-          const toElement = document.getElementById(ledId);
-          console.log("Elemento LED:", toElement);
-
-          const wokwiLed = toElement.querySelector("wokwi-led");
-          console.log(wokwiLed.value); // ver valor actual
-          console.log(value)
-          wokwiLed.value = !!value; // fuerza a boolean
-
-
-          console.log(wokwiLed.value); // ver valor actual
+          if (gpioConnection.toPinId.includes("led")) {
+            const toPinId = gpioConnection.toPinId;
+            console.log("toPinId del LED:", toPinId);
+            const lastDashIndex = toPinId.lastIndexOf("-");
+            const ledId = toPinId.substring(0, lastDashIndex);
+            const toElement = document.getElementById(ledId);
+            console.log("Elemento LED:", toElement);
+            const wokwiLed = toElement.querySelector("wokwi-led");
+            console.log(wokwiLed.value); // ver valor actual
+            console.log(value)
+            wokwiLed.value = !!value; // fuerza a boolean
+            console.log(wokwiLed.value); // ver valor actual}
+          }
+          if (gpioConnection.toPinId.includes("buzzer")) {
+            const toPinId = gpioConnection.toPinId;
+            console.log("toPinId del Buzzer:", toPinId);
+            const lastDashIndex = toPinId.lastIndexOf("-");
+            const ledId = toPinId.substring(0, lastDashIndex);
+            const toElement = document.getElementById(ledId);
+            console.log("Elemento Buzzer:", toElement);
+            const wokwiBuzzer = toElement.querySelector("wokwi-buzzer");
+            console.log(wokwiBuzzer.hasSignal); // ver valor actual
+            wokwiBuzzer.hasSignal = !!value; // fuerza a boolean
+            console.log(wokwiBuzzer.hasSignal); // ver valor actual}
+          }
         } else {
           console.log("Not connected");
         }
@@ -146,39 +155,8 @@ const hookMap = {
       cpu.registerSet.setRegister(10, wokwiButton.pressed ? 1 : 0);
     }
   },
+  
 };
-
-
-      // // Case 1:
-      // const gpioConnection = connections.find(
-      //   (conn) => conn.fromPinId === GPIOpin && conn.toPinId.endsWith("upleft")
-      // );
-      // const gndConnection = connections.find(
-      //     (conn) => conn.fromPinId.includes("GND") && conn.toPinId.endsWith("downright")
-      //   );
-      // const existsGPIO = !!gpioConnection;
-      // const existsGND = !!gndConnection;
-      // console.log("Estado pin drcho arriba", existsGPIO);
-
-      // if (existsGPIO && existsGND) {
-      //   executeButton(gpioConnection); // Set register 10 to 1 if pressed, otherwise 0
-      // }
-      // // Case 2: diagonal down-right button
-      // gpioConnection = connections.find(
-      //   (conn) => conn.fromPinId === GPIOpin && conn.toPinId.endsWith("downright")
-      // );
-      // gndConnection = connections.find(
-      //     (conn) => conn.fromPinId.includes("GND") && conn.toPinId.endsWith("upleft")
-      //   );
-      // existsGPIO = !!gpioConnection;
-      // existsGND = !!gndConnection;
-      // console.log("Estado pin drcho arriba", existsGPIO);
-
-      // if (existsGPIO && existsGND) {
-      //   executeButton(gpioConnection); // Set register 10 to 1 if pressed, otherwise 0
-      // }
-
-      // Case 3
 
 
 export default hookMap;

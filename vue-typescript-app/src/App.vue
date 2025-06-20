@@ -76,38 +76,28 @@ const connections = ref<Array<{
 }>>([]);
 // Código
 
-const asmCode = ref([
-      "addi a0, a0, 4000",
-      "jal ra, 0x104",
-      "addi a0, a0, -4000",
-      "addi a0, a0, 5",
-      "addi a1, a1, 1",
-      "jal ra, 0x108",
-
-    ]);
 // const asmCode = ref([
 //       "addi a0, a0, 5",
-//       "addi a1, a1, 1",
-//       "jal ra, 0x100",
-//       "addi a0, a0, -5",
-//       "addi a0, a0, 1000",
 //       "jal ra, 0x104",
-//       "addi a0, a0, -1000",
+//       "addi a0, a0, -4000",
 //       "addi a0, a0, 5",
-//       "addi a1, a1, -1",
-//       "addi a1, a1, 0",
-//       "jal ra, 0x100",
-//       "addi a0, a0, 1",
 //       "addi a1, a1, 1",
-//       "jal ra, 0x100",      
-//       "addi a0, a0, -6",
-//       "addi a0, a0, 1000",
-//       "jal ra, 0x104",
-//       "addi a0, a0, -1000",
-//       "addi a0, a0, 6",
-//       "addi a1, a1, 0",
-//       "jal ra, 0x100", 
+//       "jal ra, 0x108",
+
 //     ]);
+const asmCode = ref([
+      "addi a0, a0, 5",
+      "addi a1, a1, 1",
+      "jal ra, 0x100",
+      "addi a0, a0, -5",
+      "addi a0, a0, 1000",
+      "jal ra, 0x104",
+      "addi a0, a0, -1000",
+      "addi a0, a0, 5",
+      "addi a1, a1, -1",
+      "addi a1, a1, 0",
+      "jal ra, 0x100",
+    ]);
 
 const draggingId = ref<string | null>(null)
 const offset = reactive({ x: 0, y: 0 })
@@ -269,7 +259,7 @@ function updateConnectionsPositions() {
     const y1 = fromRect.top + fromRect.height / 2 - workspaceRect.top;
     let x2 = conn.x2;
     let y2 = conn.y2;
-    if (toId.includes('led')){
+    if (toId.includes('led') || toId.includes('buzzer') ){
       const ledValues = toLedComponent.getPinCoords();
       x2 = (side === 'left' ? ledValues.left.x : ledValues.right.x) - workspaceRect.left;
       y2 = (side === 'left' ? ledValues.left.y : ledValues.right.y) - workspaceRect.top;
@@ -465,10 +455,16 @@ watch(() => selectedPin.value, (newVal) => {
   console.log('selectedPin changed to:', newVal);
 }, { immediate: true });
 
-onMounted(() => {
-  nextTick(() => {
+// onMounted(() => {
+//   nextTick(() => {
+//     setupPinListeners();
+//   });
+// });
+watch(svgRef, async (newVal) => {
+  if (newVal && newVal.svgEl) {
+    await nextTick();
     setupPinListeners();
-  });
+  }
 });
 
 watch(() => boardDataMutable.value.pins, () => {
@@ -942,22 +938,23 @@ onMounted(() => {
           }"
         />
       <Buzzer
-          v-for="button in positions.filter(item => item.id.startsWith('buzzer-'))"
-          :id="button.id"
-          :position="button.position"
-          :buttonState="button.compState"
-          :flipped="button.flipped"
-          :rotation="button.rotation"
+          v-for="buzzer in positions.filter(item => item.id.startsWith('buzzer-'))"
+          :key="buzzer.id"
+          :id="buzzer.id"
+          :position="buzzer.position"
+          :buttonState="buzzer.compState"
+          :flipped="buzzer.flipped"
+          :rotation="buzzer.rotation"
           :connections="connections"
-          @handleMouseDown="(e) => handleMouseDown(e, button.id)"
-          @handlePinClick="(side) => handlePinClick(button.id, side)"
-          @delete="removeLed(button.id)"
-          @flip="() => handleFlip(button.id)"
-          @rotate="() => handleRotate(button.id)"
-          @updateState="(state) => handleLedStateChange(button.id, state)"
+          @handleMouseDown="(e) => handleMouseDown(e, buzzer.id)"
+          @handlePinClick="(side) => handlePinClick(buzzer.id, side)"
+          @delete="removeLed(buzzer.id)"
+          @flip="() => handleFlip(buzzer.id)"
+          @rotate="() => handleRotate(buzzer.id)"
+          @updateState="(state) => handleLedStateChange(buzzer.id, state)"
           :ref="el => {
-            if (el) gadgetRefs[button.id] = el;
-            else delete gadgetRefs[button.id];
+            if (el) gadgetRefs[buzzer.id] = el;
+            else delete gadgetRefs[buzzer.id];
           }"
         />
       </div>
