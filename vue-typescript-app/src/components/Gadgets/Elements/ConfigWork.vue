@@ -32,6 +32,16 @@
         <label class="form-check-label" for="darkModeSwitch"></label>
       </div>
     </div>
+
+  <!-- Usa teleport para el modal -->
+  <!-- <teleport to="#overlay-container">
+    <div v-if="showBoardSelect" class="modal-backdrop">
+      <div class="modal-center">
+        <BoardSelect />
+        <button class="btn btn-secondary mt-2" @click="showBoardSelect = false">Cerrar</button>
+      </div>
+    </div>
+  </teleport> -->
   </div>
 </template>
 
@@ -39,6 +49,8 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 
 const emit = defineEmits(['work-action']);
+
+const showBoardSelect = ref(false)
 
 function handleFile(label) {
   switch(label) {
@@ -62,7 +74,10 @@ function handleFile(label) {
       break;
     case 'DarkMode':
       emit('work-action', 'dark')
-      break;         
+      break;
+    case 'Change Board':
+      emit('work-action', 'show')
+      break;
   }
 }
 
@@ -89,6 +104,12 @@ const categories = ref([
     items: [
       { label: 'Clean All', icon: 'trash'  },
       { label: 'Info', icon: 'info' },
+    ],
+  },
+  {
+    name: 'Board',
+    items: [
+      { label: 'Change Board', icon: 'gift'  },
     ],
   },
 ])
@@ -131,5 +152,24 @@ onMounted(() => {
   background-color: #0b5ed7 !important;
   border-color: #0a58ca !important;
   color: #fff !important;
+}
+
+/* Modal centrado para BoardSelect */
+.modal-backdrop {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+.modal-center {
+  background: #fff;
+  padding: 2rem;
+  border-radius: 1rem;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.2);
+  min-width: 320px;
+  max-width: 90vw;
 }
 </style>

@@ -21,11 +21,11 @@
 
 <script setup lang="ts">
 import { ref, reactive, watch, nextTick, onMounted, computed , onBeforeUnmount} from 'vue'
-import BoardElement from './components/BoardElements/BoardElement.vue';
+import BoardElement from './components/BoardElements/esp32c3devkit2.vue';
 import * as Emulator from "@aloeminium108/risc-v-emulator";
 const { Assembler, CPU } = Emulator.default;
-import hookMap from './components/BoardElements/emulator.js';
-import boardData from './components/BoardElements/esp32c3.json';
+import hookMap from './components/BoardElements/esp32c3devkit2.js';
+import boardData from './components/BoardElements/esp32c3devkit2.json';
 import ConnectionsLines from './components/Gadgets/Lines.vue';
 import Menu from './components/Gadgets/GadgetMenu.vue';
 import LEDComponent from './components/Gadgets/Elements/LED.vue';
@@ -33,7 +33,8 @@ import ButtonComponent from './components/Gadgets/Elements/Button.vue';
 import FileMenu from './components/Gadgets/Elements/ConfigFile.vue';
 import WorkMenu from './components/Gadgets/Elements/ConfigWork.vue';
 import Buzzer from './components/Gadgets/Elements/Buzzer.vue';
-
+// import JSZip from 'jszip';
+import BoardSelect from './components/Gadgets/Elements/BoardSelect.vue';
 const workspaceRef = ref<HTMLDivElement | null>(null);
 const boardDataMutable = ref({ ...boardData });
 
@@ -544,22 +545,16 @@ function zoomOut() {
   if (SCALE.value < 1) SCALE.value = 1; // Limitar a 2x
   updateConnectionsPositions();
 }
+const showBoardSelect = ref(false)
 function onWorkAction(action) {
   switch(action){
     case 'zoomin': zoomIn(); break;
     case 'zoomout': zoomOut(); break;
-    case 'clean': 
-      clearConnections(); 
-      break;
-    case 'undo': 
-      undo(); 
-      break;
-    case 'redo': 
-      redo(); 
-      break;
-    case 'dark': 
-      changeDarkMode(); 
-      break;  
+    case 'clean': clearConnections(); break;
+    case 'undo': undo(); break;
+    case 'redo': redo(); break;
+    case 'dark': changeDarkMode(); break;
+    case 'show': showBoardSelect.value = true; break; 
   }
 }
 function saveStateForUndo() {
@@ -760,8 +755,47 @@ function handleUpdateBoardData(newBoardData) {
     setupPinListeners();
   });
 }
+const boardComponent = ref(null)
+const boardJs = ref(null)
 
+async function handleBoardSelect(base: string) {
+  // Carga dinámica de los tres archivos
+  boardComponent.value = (await import(`./components/BoardElements/${base}.vue`)).default
+  boardDataMutable.value = (await import(`./components/BoardElements/${base}.json`)).default
+  boardJs.value = (await import(`./components/BoardElements/${base}.js`)).default
+  showBoardSelect.value = false
+}
+// async function exportBoardAsZip() {
+//   const zip = new JSZip();
 
+//   // 1. Agrega el JSON
+//   const json = JSON.stringify(boardDataMutable.value, null, 2);
+//   zip.file((boardDataMutable.value?.name || 'custom-board') + '.json', json);
+
+//   // 2. Agrega el JS
+//   // Si tienes el código JS en memoria, usa esa variable.
+//   // Si no, lo cargas por fetch:
+//   const jsCode = await fetch('/src/components/BoardElements/emulator.js').then(res => res.text());
+//   zip.file('emulator.js', jsCode);
+
+//   // 3. Agrega el Vue
+//   // Si tienes el código Vue en memoria, usa esa variable.
+//   // Si no, lo cargas por fetch:
+//   const vueCode = await fetch('/src/components/BoardElements/ESP32C3Dev2Board.vue').then(res => res.text());
+//   zip.file('ESP32C3Dev2Board.vue', vueCode);
+
+//   // 4. Genera y descarga el ZIP
+//   const blob = await zip.generateAsync({ type: 'blob' });
+//   const url = URL.createObjectURL(blob);
+//   const a = document.createElement('a');
+//   a.href = url;
+//   a.download = (boardDataMutable.value?.name || 'custom-board') + '.zip';
+//   a.click();
+//   URL.revokeObjectURL(url);
+// }
+onMounted(() => {
+  handleBoardSelect('esp32c3devkit2')
+})
 </script>
 
 <template>
@@ -846,6 +880,7 @@ function handleUpdateBoardData(newBoardData) {
           <button @click="runProgram" style="font-size: 1.5rem; padding: 0.75rem 1.5rem; margin-right: 0.5rem;">
             <fa-icon :icon="['fas', 'play']" style="width: 1em; height: 1em; color: white;" />
           </button>
+          <!-- <button @click="exportBoardAsZip">Exportar placa como ZIP</button> -->
           <!-- <button @click="clearConnections" style="font-size: 1.5rem; padding: 0.75rem 1.5rem;">
             <fa-icon :icon="['fas', 'trash']" style="width: 1em; height: 1em; color: white;" />
           </button> -->
@@ -859,7 +894,8 @@ function handleUpdateBoardData(newBoardData) {
           transformOrigin: 'top left', 
           display: 'inline-block' 
         }">
-        <BoardElement
+        
+        <component :is="boardComponent" v-if="boardComponent"
           :positions="positions"
           @handleMouseDown="handleMouseDown"
           @updateBoard="handleUpdateBoardData"
@@ -963,6 +999,14 @@ function handleUpdateBoardData(newBoardData) {
   <div id="overlay-container"
      style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2000;">
   </div>
+  <teleport to="body">
+  <div v-if="showBoardSelect" class="modal-backdrop" style="z-index:3000;">
+    <div class="modal-center">
+      <BoardSelect @select="handleBoardSelect" @close-select="showBoardSelect = false" />
+      <!-- <button class="btn btn-secondary mt-2" @click="showBoardSelect = false">Cerrar</button> -->
+    </div>
+  </div>
+</teleport>
 </template>
 
 <style>
@@ -1007,8 +1051,21 @@ function handleUpdateBoardData(newBoardData) {
   box-shadow: 0 8px 32px rgba(60,60,60,0.12);
 }
 .modal-backdrop {
-  background-color: #000 !important;
-  opacity: 0.5 !important;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5) !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3000;
+}
+.modal-center {
+  background: #fff;
+  padding: 2rem;
+  border-radius: 1rem;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.2);
+  min-width: 320px;
+  max-width: 90vw;
 }
 .modal-footer .btn {
   background-color: #0d6efd !important;
