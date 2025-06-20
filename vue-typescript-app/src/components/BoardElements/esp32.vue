@@ -206,6 +206,25 @@ function handleRotate() {
         <!-- Antenna -->
         <path d="m24.3 22.1v-18.8h8v11.5h10.2v-11h8.5v10.5h10v-10.5h17.8v20.2" fill="none" stroke="#4f4c48" stroke-width="1px"></path>
         <path d="m69.7 4.16v19.5" fill="none" stroke="#4f4c48" stroke-width="1px"></path>
+               <!-- Botón Configuración -->
+      <circle
+        cx="10"
+        cy="10"
+        r="10"
+        fill="transparent"
+        style="cursor: pointer; pointer-events: auto;"
+        ref="configButtonRef"
+        @click="handleRotate"
+      />
+      <text
+        x="10"
+        y="11"
+        text-anchor="middle"
+        alignment-baseline="middle"
+        font-size="12"
+        fill="black"
+        style="pointer-events: none;"
+      >🔁</text>
       </svg>
 
 
