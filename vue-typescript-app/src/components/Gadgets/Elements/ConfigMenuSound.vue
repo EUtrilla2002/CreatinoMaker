@@ -45,7 +45,7 @@ const menuWidth = ref(0)
 const selectedItem = ref<string | null>(null)
 const selectedColor = ref('#000000')
 const popupPosition = ref({ x: 0, y: 0 })
-const emit = defineEmits(['update:modelValue', 'flip', 'rotate','delete']) 
+const emit = defineEmits(['sound', 'flip', 'rotate','delete']) 
 
 const categories = ref([
   {
@@ -69,18 +69,21 @@ const setColorButtonRef = (el: HTMLElement | null) => {
   if (el) colorButtonRef.value = el
 }
 
+const isMuted = ref(false) 
 
 const onItemClick = async (label: string) => {
-  if (label === 'Color') {
-    await nextTick()
-    const buttonEl = colorButtonRef.value
-    if (buttonEl) {
-      const rect = buttonEl.getBoundingClientRect()
-      popupPosition.value = {
-        x: rect.right + 10,
-        y: rect.top,
-      }
-    }
+  if (label === 'Sound') {
+    isMuted.value = !isMuted.value
+    emit('sound')
+    // Cambia el icono según el estado de muteo
+    categories.value.forEach(category => {
+      category.items.forEach(item => {
+        if (item.label === 'Sound') {
+          item.icon = isMuted.value ? 'volume-xmark' : 'music'
+        }
+      })
+    })
+    return
   }
   if (label === 'Flip') {
     emit('flip') 

@@ -386,7 +386,7 @@ const runProgram = async () => {
         const pcvalue = cpu.pc - prev_value;
         switch (pcvalue) {
           case 0x100:
-            hookMap[0x100](cpu, connections.value, (val) => (compState.value = val),svgRef);
+            hookMap[0x100](cpu, connections.value, (val) => (compState.value = val), svgRef, positions);
             prev_value = cpu.pc;
             break;
           case 0x104:
@@ -942,7 +942,7 @@ onMounted(() => {
           :key="buzzer.id"
           :id="buzzer.id"
           :position="buzzer.position"
-          :buttonState="buzzer.compState"
+          :isSignal="buzzer.compState"
           :flipped="buzzer.flipped"
           :rotation="buzzer.rotation"
           :connections="connections"
