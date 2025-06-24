@@ -1,0 +1,106 @@
+{
+  "positions": [
+    {
+      "id": "board",
+      "position": {
+        "x": 201.5,
+        "y": 89
+      },
+      "compState": true,
+      "flipped": false,
+      "rotation": 0,
+      "color": "black"
+    },
+    {
+      "id": "buzzer-1750669143663-0.25285175895302137",
+      "position": {
+        "x": 8,
+        "y": 161
+      },
+      "compState": false,
+      "flipped": false,
+      "rotation": 270,
+      "color": "red"
+    }
+  ],
+  "connections": [
+    {
+      "id": "buzzer-1750669143663-0.25285175895302137-left-GNDA",
+      "x1": 867.2333526611328,
+      "y1": 84.6500015258789,
+      "x2": 640.1666870117188,
+      "y2": 161.25,
+      "cx1": 722.1166763305664,
+      "cy1": 84.6500015258789,
+      "cx2": 722.1166763305664,
+      "cy2": 197,
+      "fromPinId": "GNDA",
+      "toPinId": "buzzer-1750669143663-0.25285175895302137-left",
+      "stroke": "black",
+      "strokeWidth": 4
+    },
+    {
+      "id": "buzzer-1750669143663-0.25285175895302137-right-GPIO5",
+      "x1": 867.2333526611328,
+      "y1": 180.68331909179688,
+      "x2": 640.1666870117188,
+      "y2": 141.25,
+      "cx1": 719.1166763305664,
+      "cy1": 180.68331909179688,
+      "cx2": 719.1166763305664,
+      "cy2": 177,
+      "fromPinId": "GPIO5",
+      "toPinId": "buzzer-1750669143663-0.25285175895302137-right",
+      "stroke": "black",
+      "strokeWidth": 4
+    }
+  ],
+  "boardData": {
+    "name": "risv-esp32c3-devkitc-02",
+    "author": "Elisa Utrilla Arroyo - UC3M",
+    "pins": [
+      "GNDA",
+      "3v3A",
+      "3v3B",
+      "GPIO4",
+      "GPIO5",
+      "GPIO6",
+      "GPIO7",
+      "GNDB",
+      "GPIO9",
+      "5v5A",
+      "5v5B",
+      "GNDC",
+      "GNDD",
+      "GPIO0",
+      "GPIO1",
+      "GPIO2",
+      "GPIO3",
+      "GNDE",
+      "GPIO10",
+      "GNDF",
+      "GPIO20",
+      "GPIO21",
+      "GNDG",
+      "GPIO18",
+      "GPIO19",
+      "GNDH",
+      "GNDI",
+      "RST1",
+      "GPIO8"
+    ]
+  },
+  "code": [
+    "addi a0, a0, 5",
+    "addi a1, a1, 1",
+    "jal ra, 0x100",
+    "addi a0, a0, -5",
+    "addi a0, a0, 1000",
+    "jal ra, 0x104",
+    "addi a0, a0, -1000",
+    "addi a0, a0, 5",
+    "addi a1, a1, -1",
+    "addi a1, a1, 0",
+    "jal ra, 0x100"
+  ]
+}
