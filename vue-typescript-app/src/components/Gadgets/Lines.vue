@@ -37,7 +37,7 @@
       class="diagram-wires_handle__aG38P react-draggable"
       :fill="selectedLineIndex === index ? 'blue' : (line.stroke || lineColor)"
       fill-opacity="0.5"
-      stroke="black"
+      :stroke="selectedLineIndex === index ? 'blue' : (line.stroke || lineColor)"
       stroke-width="2"
       style="cursor: pointer; pointer-events: all;"
       @mousedown.stop="startCodoDrag(index)"

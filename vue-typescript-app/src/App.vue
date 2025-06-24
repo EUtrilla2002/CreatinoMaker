@@ -124,6 +124,7 @@ function handleMouseDown(e: MouseEvent, id: string) {
 function handleFlip(id: string) {
   const led = positions.value.find(item => item.id === id);
   if (led) led.flipped = !led.flipped;
+  updateConnectionsPositions()
 }
 function handleColor(id: string) {
   const led = positions.value.find(item => item.id === id);
@@ -216,6 +217,9 @@ function handleLedStateChange(id: string, state: { flipped: boolean; rotation: n
     led.rotation = state.rotation;
     led.color = state.color;
     console.log(`LED ${id} state updated:`, led);
+    nextTick(() => {
+      updateConnectionsPositions()
+    });
   }
 }
 function removeLed(id: string) {
@@ -233,6 +237,7 @@ function removeLine(id) {
 }
 
 function updateConnectionsPositions() {
+  //console.log("Updating connection positions...");
   const workspaceRect = workspaceRef.value?.getBoundingClientRect();
   if (!workspaceRect) return;
 
@@ -357,6 +362,7 @@ function handleWorkspaceMouseMove(e: MouseEvent) {
 
 function handleWorkspaceMouseUp() {
   isPanning.value = false;
+  updateConnectionsPositions()
 }
 //Conexion con el kernel
 
