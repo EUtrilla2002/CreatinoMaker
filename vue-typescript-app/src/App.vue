@@ -292,13 +292,9 @@ function handlePinClick(ledId, side) {
 
   const { x1, y1, x2, y2 } = tempLine.value;
 
-  // Puntos de control: por defecto hacemos una curva vertical tipo "S"
-  const dx = x2 - x1;
-  const dy = y2 - y1;
-  const cx1 = x1 + dx / 2;
-  const cy1 = y1;
-  const cx2 = x1 + dx / 2;
-  const cy2 = y2;
+  // Codo en el punto de quiebre (puedes ajustar la lógica)
+  const codoX = x2;
+  const codoY = y1;
 
   connections.value.push({
     id: `${ledId}-${side}-${selectedPin.value}`,
@@ -306,18 +302,12 @@ function handlePinClick(ledId, side) {
     y1,
     x2,
     y2,
-    cx1,
-    cy1,
-    cx2,
-    cy2,
-
+    codoX,
+    codoY,
     fromPinId: selectedPin.value,
     toPinId: `${ledId}-${side}`,
-
     stroke: 'black',
     strokeWidth: 2 * SCALE.value,
-
-
   });
   console.log(connections.value)
 
@@ -331,11 +321,9 @@ const lines = computed(() => {
     y1: conn.y1,
     x2: conn.x2,
     y2: conn.y2,
-    cx1: conn.cx1,
-    cy1: conn.cy1,
-    cx2: conn.cx2,
-    cy2: conn.cy2,
-    stroke: conn.stroke,           // <-- añadir esto
+    codoX: conn.codoX,
+    codoY: conn.codoY,
+    stroke: conn.stroke,
     strokeWidth: 2 * SCALE.value
   }));
 });
