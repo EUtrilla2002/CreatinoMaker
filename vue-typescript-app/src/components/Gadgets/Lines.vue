@@ -13,6 +13,32 @@
       @click.stop="selectLine(index)"
       style="cursor: pointer"
     />
+
+      <!-- Handlers para los puntos de control -->
+      <circle
+        v-for="(line, index) in lines"
+        :key="'cx1-' + index"
+        :cx="line.cx1"
+        :cy="line.cy1"
+        r="7"
+        fill="orange"
+        stroke="black"
+        stroke-width="2"
+        style="cursor: pointer; pointer-events: all;"
+        @mousedown.stop="startDrag(index, 'cx1')"
+      />
+      <circle
+        v-for="(line, index) in lines"
+        :key="'cx2-' + index"
+        :cx="line.cx2"
+        :cy="line.cy2"
+        r="7"
+        fill="orange"
+        stroke="black"
+        stroke-width="2"
+        style="cursor: pointer; pointer-events: all;"
+        @mousedown.stop="startDrag(index, 'cx2')"
+      />
     
     <!-- Path visible -->
     <path
@@ -196,6 +222,41 @@ onMounted(() => {
 onBeforeUnmount(() => {
   document.removeEventListener('click', handleClickOutside)
 })
+const dragging = ref<{ index: number; control: 'cx1' | 'cx2' } | null>(null);
+
+function startDrag(index: number, control: 'cx1' | 'cx2') {
+  dragging.value = { index, control };
+  window.addEventListener('mousemove', onDrag);
+  window.addEventListener('mouseup', stopDrag);
+}
+
+function onDrag(e: MouseEvent) {
+  if (!dragging.value) return;
+  const { index, control } = dragging.value;
+  const svgRect = svgRef.value?.getBoundingClientRect();
+  if (!svgRect) return;
+  const x = e.clientX - svgRect.left;
+  const y = e.clientY - svgRect.top;
+  // Actualiza el punto de control correcto
+  if (control === 'cx1') {
+    props.lines[index].cx1 = x;
+    props.lines[index].cy1 = y;
+    emit('update:lineValue', { id: props.connections[index].id, property: 'cx1', value: x });
+    emit('update:lineValue', { id: props.connections[index].id, property: 'cy1', value: y });
+  } else if (control === 'cx2') {
+    props.lines[index].cx2 = x;
+    props.lines[index].cy2 = y;
+    emit('update:lineValue', { id: props.connections[index].id, property: 'cx2', value: x });
+    emit('update:lineValue', { id: props.connections[index].id, property: 'cy2', value: y });
+  }
+}
+
+function stopDrag() {
+  dragging.value = null;
+  window.removeEventListener('mousemove', onDrag);
+  window.removeEventListener('mouseup', stopDrag);
+}
+
 </script>
 
 <style scoped>

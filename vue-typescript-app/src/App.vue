@@ -973,19 +973,13 @@ onMounted(() => {
         :lines="lines"
         @delete="removeLine"
         @update:lineValue="changelineValue => {
-          console.log('Update line value:', changelineValue);
-
-          // Aquí puedes manejar el cambio de valor de la línea
           connections = connections.map(conn => {
             if (conn.id === changelineValue.id) {
-              console.log('Updating connection stroke:', conn.id, changelineValue.value);
-              return { ...conn, stroke: changelineValue.value };
+              // Solo actualiza la propiedad indicada
+              return { ...conn, [changelineValue.property]: changelineValue.value };
             }
-            console.log('Unchanged connection:', conn);
             return conn;
           });
-
-          console.log('Updated connections:', connections);
         }"
     />
 
