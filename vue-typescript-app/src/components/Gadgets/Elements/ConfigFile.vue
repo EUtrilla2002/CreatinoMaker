@@ -75,6 +75,7 @@ const categories = ref([
 const exampleFiles = [
   { label: 'Semaphore', file: 'examples/semaphore.json' },
   { label: 'Blink', file: 'examples/blink.json' },
+  { label: 'Buzzer', file: 'examples/buzzer.json' },
   // { label: 'Contador', file: 'counter.json' }
 ]
 const showExamplesDropdown = ref(false)
