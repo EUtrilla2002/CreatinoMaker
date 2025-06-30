@@ -74,7 +74,7 @@
       pointerEvents: 'auto',
       transform: 'scale(1.1)'
     }"
-      @update:modelValue="handleColor"
+      @sound="handleSound"
       @flip="handleFlip"
       @rotate="handleRotate"
       @delete="emit('delete', id)"
@@ -83,14 +83,13 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps, defineEmits, ref, defineExpose, nextTick, watch, onMounted } from 'vue'
+import { defineProps, defineEmits, ref, defineExpose, nextTick, watch } from 'vue'
 import ConfigMenu from './ConfigMenuSound.vue'
 
 const showConfigMenu = ref(false)
 const configMenuPosition = ref({ x: 10, y: 10 })
 const configButtonRef = ref<SVGCircleElement | null>(null)
 const buzzerRef = ref<HTMLElement | null>(null)
-const isSignal = ref(false)
 
 const props = defineProps<{
   position: { x: number; y: number };
@@ -107,6 +106,7 @@ const rotation = ref(props.rotation || 0)
 const flipped = ref(props.flipped || false)
 const RightPinRef = ref<SVGRectElement | null>(null)
 const LeftPinRef= ref<SVGRectElement | null>(null)
+const isMuted = ref(false)
 
 watch(() => props.rotation, (newStatus) => {
   rotation.value = newStatus
@@ -124,6 +124,10 @@ function getPinCoords() {
   return { left, right }
 }
 defineExpose({ getPinCoords })
+function handleSound() {
+  isMuted.value = !isMuted.value
+  console.log('Mute toggled, isMuted:', isMuted.value)
+}
 
 const emit = defineEmits<{
   (e: 'handleMouseDown', event: MouseEvent, id: string): void
@@ -178,26 +182,28 @@ function initAudio() {
   }
 }
 
-watch(isSignal, (newVal) => {
-  if (!audioInitialized.value) return
-  if (newVal) {
-    console.log('Buzzer activated')
-    buzzerAudio.value.currentTime = 0
-    buzzerAudio.value.play()
+// Cambia el watcher para observar la prop directamente
+watch(() => props.isSignal, (newVal) => {
+  console.log('Buzzer signal changed:', newVal)
+  if (!isMuted.value) {
+    initAudio()
+    if (buzzerAudio.value) {
+      if (newVal) {
+        buzzerAudio.value.currentTime = 0
+        buzzerAudio.value.play()
+      } else {
+        buzzerAudio.value.pause()
+        buzzerAudio.value.currentTime = 0
+      }
+    }
   } else {
-    buzzerAudio.value.pause()
-    buzzerAudio.value.currentTime = 0
+    // Si está muteado, siempre pausa el audio
+    if (buzzerAudio.value) {
+      buzzerAudio.value.pause()
+      buzzerAudio.value.currentTime = 0
+    }
   }
 })
-
-function onBuzzerPress(event) {
-  initAudio()
-  isSignal.value = true
-}
-
-function onBuzzerRelease(event) {
-  isSignal.value = false
-}
 </script>
 
 <style scoped>

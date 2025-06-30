@@ -4,7 +4,7 @@
     <path
       v-for="(line, index) in lines"
       :key="'hover-' + index"
-      :d="generateCurvePath(line)"
+      :d="getPath(line.x1, line.y1, line.codoX, line.codoY, line.x2, line.y2)"
       stroke="transparent"
       stroke-width="20"
       fill="none"
@@ -13,19 +13,36 @@
       @click.stop="selectLine(index)"
       style="cursor: pointer"
     />
-    
+
     <!-- Path visible -->
     <path
       v-for="(line, index) in lines"
       :key="line.id || index"
-      :d="generateCurvePath(line)"
+      :d="getPath(line.x1, line.y1, line.codoX, line.codoY, line.x2, line.y2)"
       :stroke="selectedLineIndex === index ? 'blue' : (line.stroke || lineColor)"
       :stroke-width="line.strokeWidth || 2"
+      fill="none"
       stroke-linecap="round"
       stroke-linejoin="round"
-      fill="none"
     />
 
+    <!-- Handler draggable del codo -->
+    <circle
+      v-for="(line, index) in lines"
+      :key="'codo-' + index"
+      :cx="line.codoX"
+      :cy="line.codoY"
+      r="7"
+      data-draggable="0"
+      class="diagram-wires_handle__aG38P react-draggable"
+      :fill="selectedLineIndex === index ? 'blue' : (line.stroke || lineColor)"
+      fill-opacity="0.5"
+      :stroke="selectedLineIndex === index ? 'blue' : (line.stroke || lineColor)"
+      stroke-width="2"
+      style="cursor: pointer; pointer-events: all;"
+      @mousedown.stop="startCodoDrag(index)"
+    />
+    
     <!-- Línea temporal -->
     <line
       v-if="tempLine"
@@ -94,9 +111,6 @@ const selectedLineId = ref<string | null>(null)
 const showColorPicker = ref(false)
 const svgRef = ref<SVGSVGElement | null>(null)
 
-function generateCurvePath({ x1, y1, x2, y2, cx1, cy1, cx2, cy2 }) {
-  return `M ${x1},${y1} C ${cx1},${cy1} ${cx2},${cy2} ${x2},${y2}`
-}
 
 function selectLine(index: number) {
   if (selectedLineIndex.value === index) {
@@ -145,10 +159,10 @@ function handleClickOutside(event: MouseEvent) {
 }
 
 function getButtonStyle(line: any) {
-  const t = 0.5
-  const x = cubicBezier(t, line.x1, line.cx1, line.cx2, line.x2)
-  const y = cubicBezier(t, line.y1, line.cy1, line.cy2, line.y2)
-
+  // Punto medio entre x1,y1 -> codoX,codoY -> x2,y2
+  // Puedes usar el codo directamente, o el promedio de los tres puntos
+  const x = (line.x1 + line.codoX + line.x2) / 3;
+  const y = (line.y1 + line.codoY + line.y2) / 3;
   return {
     position: 'absolute',
     left: `${x}px`,
@@ -159,10 +173,9 @@ function getButtonStyle(line: any) {
 }
 
 function getMenuStyle(line: any) {
-  const t = 0.5
-  const x = cubicBezier(t, line.x1, line.cx1, line.cx2, line.x2)
-  const y = cubicBezier(t, line.y1, line.cy1, line.cy2, line.y2)
-
+  // Igual que arriba, pero desplazado para que no tape el botón
+  const x = (line.x1 + line.codoX + line.x2) / 3;
+  const y = (line.y1 + line.codoY + line.y2) / 3;
   return {
     position: 'absolute',
     left: `${x - 150}px`,
@@ -196,6 +209,117 @@ onMounted(() => {
 onBeforeUnmount(() => {
   document.removeEventListener('click', handleClickOutside)
 })
+const dragging = ref<{ index: number; control: 'cx1' | 'cx2' } | null>(null);
+
+function startDrag(index: number, control: 'cx1' | 'cx2') {
+  dragging.value = { index, control };
+  window.addEventListener('mousemove', onDrag);
+  window.addEventListener('mouseup', stopDrag);
+}
+
+function onDrag(e: MouseEvent) {
+  if (!dragging.value) return;
+  const { index, control } = dragging.value;
+  const svgRect = svgRef.value?.getBoundingClientRect();
+  if (!svgRect) return;
+  const x = e.clientX - svgRect.left;
+  const y = e.clientY - svgRect.top;
+  // Actualiza el punto de control correcto
+  if (control === 'cx1') {
+    props.lines[index].cx1 = x;
+    props.lines[index].cy1 = y;
+    emit('update:lineValue', { id: props.connections[index].id, property: 'cx1', value: x });
+    emit('update:lineValue', { id: props.connections[index].id, property: 'cy1', value: y });
+  } else if (control === 'cx2') {
+    props.lines[index].cx2 = x;
+    props.lines[index].cy2 = y;
+    emit('update:lineValue', { id: props.connections[index].id, property: 'cx2', value: x });
+    emit('update:lineValue', { id: props.connections[index].id, property: 'cy2', value: y });
+  }
+}
+
+function stopDrag() {
+  dragging.value = null;
+  window.removeEventListener('mousemove', onDrag);
+  window.removeEventListener('mouseup', stopDrag);
+}
+
+const curveDragging = ref<{ index: number; t: number } | null>(null);
+
+function startDragOnCurve(index: number, t: number) {
+  curveDragging.value = { index, t };
+  window.addEventListener('mousemove', onCurveDrag);
+  window.addEventListener('mouseup', stopCurveDrag);
+}
+
+function onCurveDrag(e: MouseEvent) {
+  if (!curveDragging.value) return;
+  const { index, t } = curveDragging.value;
+  const svgRect = svgRef.value?.getBoundingClientRect();
+  if (!svgRect) return;
+  const x = e.clientX - svgRect.left;
+  const y = e.clientY - svgRect.top;
+
+  // Calcula el nuevo punto en la curva
+  const p0 = { x: props.lines[index].x1, y: props.lines[index].y1 };
+  const p1 = { x: props.lines[index].cx1, y: props.lines[index].cy1 };
+  const p2 = { x: props.lines[index].cx2, y: props.lines[index].cy2 };
+  const p3 = { x: props.lines[index].x2, y: props.lines[index].y2 };
+
+  const newPoint = cubicBezier(t, p0.x, p1.x, p2.x, p3.x);
+  const newY = cubicBezier(t, p0.y, p1.y, p2.y, p3.y);
+
+  // Actualiza los puntos de control según el punto arrastrado
+  if (t === 0.25) {
+    props.lines[index].cx1 = newPoint;
+    props.lines[index].cy1 = newY;
+    emit('update:lineValue', { id: props.connections[index].id, property: 'cx1', value: newPoint });
+    emit('update:lineValue', { id: props.connections[index].id, property: 'cy1', value: newY });
+  } else if (t === 0.75) {
+    props.lines[index].cx2 = newPoint;
+    props.lines[index].cy2 = newY;
+    emit('update:lineValue', { id: props.connections[index].id, property: 'cx2', value: newPoint });
+    emit('update:lineValue', { id: props.connections[index].id, property: 'cy2', value: newY });
+  }
+}
+
+function stopCurveDrag() {
+  curveDragging.value = null;
+  window.removeEventListener('mousemove', onCurveDrag);
+  window.removeEventListener('mouseup', stopCurveDrag);
+}
+
+const codoDragging = ref<{ index: number } | null>(null);
+
+function startCodoDrag(index: number) {
+  codoDragging.value = { index };
+  window.addEventListener('mousemove', onCodoDrag);
+  window.addEventListener('mouseup', stopCodoDrag);
+}
+
+function onCodoDrag(e: MouseEvent) {
+  if (!codoDragging.value) return;
+  const { index } = codoDragging.value;
+  const svgRect = svgRef.value?.getBoundingClientRect();
+  if (!svgRect) return;
+  const x = e.clientX - svgRect.left;
+  const y = e.clientY - svgRect.top;
+  props.lines[index].codoX = x;
+  props.lines[index].codoY = y;
+  emit('update:lineValue', { id: props.connections[index].id, property: 'codoX', value: x });
+  emit('update:lineValue', { id: props.connections[index].id, property: 'codoY', value: y });
+}
+
+function stopCodoDrag() {
+  codoDragging.value = null;
+  window.removeEventListener('mousemove', onCodoDrag);
+  window.removeEventListener('mouseup', stopCodoDrag);
+}
+
+// Modifica getWokwiPath para usar el codo
+function getPath(x1: number, y1: number, codoX: number, codoY: number, x2: number, y2: number) {
+  return `M${x1},${y1} L${codoX},${codoY} L${x2},${y2}`;
+}
 </script>
 
 <style scoped>

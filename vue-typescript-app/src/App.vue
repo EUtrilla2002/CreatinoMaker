@@ -124,6 +124,7 @@ function handleMouseDown(e: MouseEvent, id: string) {
 function handleFlip(id: string) {
   const led = positions.value.find(item => item.id === id);
   if (led) led.flipped = !led.flipped;
+  updateConnectionsPositions()
 }
 function handleColor(id: string) {
   const led = positions.value.find(item => item.id === id);
@@ -216,6 +217,9 @@ function handleLedStateChange(id: string, state: { flipped: boolean; rotation: n
     led.rotation = state.rotation;
     led.color = state.color;
     console.log(`LED ${id} state updated:`, led);
+    nextTick(() => {
+      updateConnectionsPositions()
+    });
   }
 }
 function removeLed(id: string) {
@@ -233,6 +237,7 @@ function removeLine(id) {
 }
 
 function updateConnectionsPositions() {
+  //console.log("Updating connection positions...");
   const workspaceRect = workspaceRef.value?.getBoundingClientRect();
   if (!workspaceRect) return;
 
@@ -292,13 +297,9 @@ function handlePinClick(ledId, side) {
 
   const { x1, y1, x2, y2 } = tempLine.value;
 
-  // Puntos de control: por defecto hacemos una curva vertical tipo "S"
-  const dx = x2 - x1;
-  const dy = y2 - y1;
-  const cx1 = x1 + dx / 2;
-  const cy1 = y1;
-  const cx2 = x1 + dx / 2;
-  const cy2 = y2;
+  // Codo en el punto de quiebre (puedes ajustar la lógica)
+  const codoX = x2;
+  const codoY = y1;
 
   connections.value.push({
     id: `${ledId}-${side}-${selectedPin.value}`,
@@ -306,18 +307,12 @@ function handlePinClick(ledId, side) {
     y1,
     x2,
     y2,
-    cx1,
-    cy1,
-    cx2,
-    cy2,
-
+    codoX,
+    codoY,
     fromPinId: selectedPin.value,
     toPinId: `${ledId}-${side}`,
-
     stroke: 'black',
     strokeWidth: 2 * SCALE.value,
-
-
   });
   console.log(connections.value)
 
@@ -331,11 +326,9 @@ const lines = computed(() => {
     y1: conn.y1,
     x2: conn.x2,
     y2: conn.y2,
-    cx1: conn.cx1,
-    cy1: conn.cy1,
-    cx2: conn.cx2,
-    cy2: conn.cy2,
-    stroke: conn.stroke,           // <-- añadir esto
+    codoX: conn.codoX,
+    codoY: conn.codoY,
+    stroke: conn.stroke,
     strokeWidth: 2 * SCALE.value
   }));
 });
@@ -369,6 +362,7 @@ function handleWorkspaceMouseMove(e: MouseEvent) {
 
 function handleWorkspaceMouseUp() {
   isPanning.value = false;
+  updateConnectionsPositions()
 }
 //Conexion con el kernel
 
@@ -386,7 +380,7 @@ const runProgram = async () => {
         const pcvalue = cpu.pc - prev_value;
         switch (pcvalue) {
           case 0x100:
-            hookMap[0x100](cpu, connections.value, (val) => (compState.value = val),svgRef);
+            hookMap[0x100](cpu, connections.value, (val) => (compState.value = val), svgRef, positions);
             prev_value = cpu.pc;
             break;
           case 0x104:
@@ -942,7 +936,7 @@ onMounted(() => {
           :key="buzzer.id"
           :id="buzzer.id"
           :position="buzzer.position"
-          :buttonState="buzzer.compState"
+          :isSignal="buzzer.compState"
           :flipped="buzzer.flipped"
           :rotation="buzzer.rotation"
           :connections="connections"
@@ -973,19 +967,13 @@ onMounted(() => {
         :lines="lines"
         @delete="removeLine"
         @update:lineValue="changelineValue => {
-          console.log('Update line value:', changelineValue);
-
-          // Aquí puedes manejar el cambio de valor de la línea
           connections = connections.map(conn => {
             if (conn.id === changelineValue.id) {
-              console.log('Updating connection stroke:', conn.id, changelineValue.value);
-              return { ...conn, stroke: changelineValue.value };
+              // Solo actualiza la propiedad indicada
+              return { ...conn, [changelineValue.property]: changelineValue.value };
             }
-            console.log('Unchanged connection:', conn);
             return conn;
           });
-
-          console.log('Updated connections:', connections);
         }"
     />
 

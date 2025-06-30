@@ -4,7 +4,7 @@ import boardData from "./esp32c3devkit2.json";
 const sleep = (delay) => new Promise((resolve) => setTimeout(resolve, delay));
 
 const hookMap = {
-  0x100: function cr_digitalWrite(cpu, connections, setLedState, boardElementRef) {
+  0x100: function cr_digitalWrite(cpu, connections, setLedState, boardElementRef, positions) {
     const pin = cpu.registerSet.getRegister(10); // a0
     const value = cpu.registerSet.getRegister(11); // a1
     console.log(`cr_digitalWrite invoked! pin: ${pin}, value: ${value}`);
@@ -52,17 +52,28 @@ const hookMap = {
             wokwiLed.value = !!value; // fuerza a boolean
             console.log(wokwiLed.value); // ver valor actual}
           }
+          // if (gpioConnection.toPinId.includes("buzzer")) {
+          //   const toPinId = gpioConnection.toPinId;
+          //   console.log("toPinId del Buzzer:", toPinId);
+          //   const lastDashIndex = toPinId.lastIndexOf("-");
+          //   const ledId = toPinId.substring(0, lastDashIndex);
+          //   const toElement = document.getElementById(ledId);
+          //   console.log("Elemento Buzzer:", toElement);
+          //   const wokwiBuzzer = toElement.querySelector("wokwi-buzzer");
+          //   console.log(wokwiBuzzer.hasSignal); // ver valor actual
+          //   wokwiBuzzer.hasSignal = !!value; // fuerza a boolean
+          //   console.log(wokwiBuzzer.hasSignal); // ver valor actual}
+          // }
           if (gpioConnection.toPinId.includes("buzzer")) {
             const toPinId = gpioConnection.toPinId;
-            console.log("toPinId del Buzzer:", toPinId);
             const lastDashIndex = toPinId.lastIndexOf("-");
-            const ledId = toPinId.substring(0, lastDashIndex);
-            const toElement = document.getElementById(ledId);
-            console.log("Elemento Buzzer:", toElement);
-            const wokwiBuzzer = toElement.querySelector("wokwi-buzzer");
-            console.log(wokwiBuzzer.hasSignal); // ver valor actual
-            wokwiBuzzer.hasSignal = !!value; // fuerza a boolean
-            console.log(wokwiBuzzer.hasSignal); // ver valor actual}
+            const buzzerId = toPinId.substring(0, lastDashIndex);
+
+            // Cambia el estado reactivo en Vue
+            const buzzer = positions.value.find(item => item.id === buzzerId);
+            if (buzzer) {
+              buzzer.compState = !!value;
+            }
           }
         } else {
           console.log("Not connected");
