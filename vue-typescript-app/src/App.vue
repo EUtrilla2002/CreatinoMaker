@@ -366,39 +366,41 @@ function handleWorkspaceMouseUp() {
 }
 //Conexion con el kernel
 
-const runProgram = async () => {
-      const programBuffer = Assembler.assemble(asmCode.value);
-      const ramSize = 1024;
-      const ram = new ArrayBuffer(ramSize);
-      const ramView = new Uint8Array(ram);
-      const programView = new Uint8Array(programBuffer);
-      ramView.set(programView, 0);
+//const runProgram = async () => {
+    //   const programBuffer = Assembler.assemble(asmCode.value);
+    //   const ramSize = 1024;
+    //   const ram = new ArrayBuffer(ramSize);
+    //   const ramView = new Uint8Array(ram);
+    //   const programView = new Uint8Array(programBuffer);
+    //   ramView.set(programView, 0);
 
-      const cpu = new CPU(ram, 0);
-      let prev_value = 0;
-      for (let i = 0; i < 50; i++) {
-        const pcvalue = cpu.pc - prev_value;
-        switch (pcvalue) {
-          case 0x100:
-            hookMap[0x100](cpu, connections.value, (val) => (compState.value = val), svgRef, positions);
-            prev_value = cpu.pc;
-            break;
-          case 0x104:
-            await hookMap[0x104](cpu, (val) => (compState.value = val));
-            prev_value = cpu.pc;
-            break;
-          case 0x108:
-            await hookMap[0x108](cpu, connections.value,(val) => (compState.value = val));
-            prev_value = cpu.pc;
-            break;  
-          default:
-            prev_value = cpu.pc;
-            cpu.executionStep();
-            console.log(`PC: ${cpu.pc}`);
-            console.log(`ra: ${cpu.registerSet.getRegister(1)}`);
-        }
-      }
-    };
+    //   const cpu = new CPU(ram, 0);
+    //   let prev_value = 0;
+    //   for (let i = 0; i < 50; i++) {
+    //     const pcvalue = cpu.pc - prev_value;
+    //     switch (pcvalue) {
+    //       case 0x100:
+    //         hookMap[0x100](cpu, connections.value, (val) => (compState.value = val), svgRef, positions);
+    //         prev_value = cpu.pc;
+    //         break;
+    //       case 0x104:
+    //         await hookMap[0x104](cpu, (val) => (compState.value = val));
+    //         prev_value = cpu.pc;
+    //         break;
+    //       case 0x108:
+    //         await hookMap[0x108](cpu, connections.value,(val) => (compState.value = val));
+    //         prev_value = cpu.pc;
+    //         break;  
+    //       default:
+    //         prev_value = cpu.pc;
+    //         cpu.executionStep();
+    //         console.log(`PC: ${cpu.pc}`);
+    //         console.log(`ra: ${cpu.registerSet.getRegister(1)}`);
+    //     }
+    //   }
+    // };
+
+    
 
 function setupPinListeners() {
   if (!svgRef.value) return;
