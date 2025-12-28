@@ -8,4 +8,4 @@ Real-Life simulator based on RISC-V assembler instructions + arduino Functions
 2. npm install (if is a fresh start)
 3. bun run dev
 
-For the moment, only LEDS are available 
+Components available: LED. Buzzer, Button 
